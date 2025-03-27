@@ -21,6 +21,8 @@ const AudioPlayer = () => {
     });
 
     const audioSrc = import.meta.env.BASE_URL + 'example.mp3';
+    const coverSrc = import.meta.env.BASE_URL + 'default-cover.jpg';
+
 
     // Fetch metadata on load
     useEffect(() => {

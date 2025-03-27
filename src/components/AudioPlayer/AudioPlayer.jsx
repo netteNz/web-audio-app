@@ -10,6 +10,7 @@ import VisualizerBars from './VisualizerBars';
 const AudioPlayer = () => {
     const wavesurferRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isWaveReady, setIsWaveReady] = useState(false);
     const [volume, setVolume] = useState(1);
 
     const [metadata, setMetadata] = useState({
@@ -56,26 +57,30 @@ const AudioPlayer = () => {
     };
 
     const togglePlay = () => {
-        if (wavesurferRef.current) {
+        if (wavesurferRef.current && isWaveReady) {
             wavesurferRef.current.playPause();
             setIsPlaying(wavesurferRef.current.isPlaying());
         }
     };
+
     console.log('Parsed metadata:', metadata);
-    
+
 
     return (
         <div className="w-full max-w-7xl mx-auto mt-10 bg-zinc-900 text-white p-8 rounded-2xl shadow-lg space-y-8">
             <TrackInfo metadata={metadata} />
 
             <div className="w-full">
-                <Waveform src={audioSrc} wavesurferRef={wavesurferRef} />
+                <Waveform src={audioSrc}
+                    wavesurferRef={wavesurferRef}
+                    onReady={() => setIsWaveReady(true)} />
             </div>
 
             <VisualizerBars wavesurferRef={wavesurferRef} />
 
             <div className="flex justify-center items-center space-x-6 pt-2">
-                <AudioControls isPlaying={isPlaying} onPlayPause={togglePlay} />
+                <AudioControls isPlaying={isPlaying}
+                    onPlayPause={togglePlay} />
                 <div className="w-full max-w-xs">
                     <VolumeSlider volume={volume} onChange={handleVolumeChange} />
                 </div>

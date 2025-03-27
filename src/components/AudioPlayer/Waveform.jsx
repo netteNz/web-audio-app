@@ -3,7 +3,7 @@ import WaveSurfer from 'wavesurfer.js';
 import Spectrogram from 'wavesurfer.js/dist/plugins/spectrogram.esm.js';
 import VisualizerBars from './VisualizerBars';
 
-const Waveform = ({ src, wavesurferRef }) => {
+const Waveform = ({ src, wavesurferRef, onReady }) => {
     const waveformRef = useRef(null);
     const spectrogramRef = useRef(null);
     const [currentTime, setCurrentTime] = useState(0);
@@ -33,6 +33,7 @@ const Waveform = ({ src, wavesurferRef }) => {
 
         ws.on('ready', () => {
             setDuration(ws.getDuration());
+            if(onReady) onReady();
         });
 
         ws.on('audioprocess', () => {

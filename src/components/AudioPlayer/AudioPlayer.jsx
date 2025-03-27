@@ -62,6 +62,7 @@ const AudioPlayer = () => {
         }
     };
     console.log('Parsed metadata:', metadata);
+    
 
     return (
         <div className="w-full max-w-7xl mx-auto mt-10 bg-zinc-900 text-white p-8 rounded-2xl shadow-lg space-y-8">

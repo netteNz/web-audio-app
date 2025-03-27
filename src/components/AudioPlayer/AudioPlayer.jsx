@@ -19,7 +19,7 @@ const AudioPlayer = () => {
         picture: null,
     });
 
-    const audioSrc = '/example.mp3';
+    const audioSrc = import.meta.env.BASE_URL + 'example.mp3';
 
     // Fetch metadata on load
     useEffect(() => {

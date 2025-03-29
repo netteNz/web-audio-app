@@ -31,7 +31,19 @@ const Waveform = ({ src, wavesurferRef, onReady }) => {
             wavesurferRef.current.backend = ws.backend;
         }
 
-        ws.on('ready', () => {
+        ws.on('ready', async () => {
+            try {
+                // Try to resume AudioContext as it might be suspended
+                const audioContext = ws.backend.getAudioContext();
+                if (audioContext && audioContext.state === 'suspended') {
+                    console.log('Resuming suspended AudioContext...');
+                    await audioContext.resume();
+                    console.log('AudioContext state after resume:', audioContext.state);
+                }
+            } catch (err) {
+                console.error('Failed to resume AudioContext:', err);
+            }
+            
             setDuration(ws.getDuration());
             if(onReady) onReady();
         });
@@ -44,6 +56,9 @@ const Waveform = ({ src, wavesurferRef, onReady }) => {
             setCurrentTime(ws.getCurrentTime());
         });
 
+        ws.on('error', (err) => {
+            console.error('WaveSurfer error:', err);
+        });
 
         // Spectrogram setup
         ws.registerPlugin(

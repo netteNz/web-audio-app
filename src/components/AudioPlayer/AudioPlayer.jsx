@@ -20,7 +20,7 @@ const AudioPlayer = () => {
         picture: null,
     });
 
-    const audioSrc = import.meta.env.BASE_URL + 'example.mp3';
+    const audioSrc = './example.mp3';
     const coverSrc = import.meta.env.BASE_URL + 'default-cover.jpg';
 
 
@@ -28,7 +28,8 @@ const AudioPlayer = () => {
     useEffect(() => {
         const fetchMetadata = async () => {
             try {
-                const response = await fetch(audioSrc);
+                // Add the CORS mode option here
+                const response = await fetch(audioSrc, { mode: 'cors' });
                 const blob = await response.blob();
                 const meta = await parseBlob(blob);
 

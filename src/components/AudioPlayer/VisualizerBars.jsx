@@ -1,71 +1,170 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
 const VisualizerBars = ({ wavesurferRef }) => {
   const canvasRef = useRef(null);
+  const animationRef = useRef(null);
+  const [isReady, setIsReady] = useState(false);
 
+  // First useEffect just to monitor when WaveSurfer becomes ready
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ws = wavesurferRef.current;
+    if (!ws) return;
 
-    let animationId;
-    let analyser, dataArray, bufferLength;
+    // Check if already ready
+    if (ws.isReady) {
+      console.log('WaveSurfer is already ready');
+      setIsReady(true);
+      return;
+    }
 
-    const setupVisualizer = () => {
-      const ws = wavesurferRef.current;
-      if (!ws || !ws.media) return;
-
-      const audioContext = new AudioContext();
-      const source = audioContext.createMediaElementSource(ws.media);
-      analyser = audioContext.createAnalyser();
-      source.connect(analyser);
-      analyser.connect(audioContext.destination);
-
-      analyser.fftSize = 128;
-      bufferLength = analyser.frequencyBinCount;
-      dataArray = new Uint8Array(bufferLength);
-
-      canvas.width = canvas.clientWidth;
-      canvas.height = canvas.clientHeight;
-
-      draw();
+    // Listen for ready event
+    const handleReady = () => {
+      console.log('WaveSurfer ready event received in VisualizerBars');
+      setIsReady(true);
     };
 
-    const draw = () => {
-      animationId = requestAnimationFrame(draw);
-      analyser.getByteFrequencyData(dataArray);
+    ws.on('ready', handleReady);
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return () => {
+      ws.un('ready', handleReady);
+    };
+  }, [wavesurferRef.current]);
 
-      // Create gradient
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-      gradient.addColorStop(0, '#0ea5e9');   // sky-500
-      gradient.addColorStop(0.5, '#a855f7'); // purple-500
-      gradient.addColorStop(1, '#f472b6');   // pink-400
-      ctx.strokeStyle = gradient;
-      ctx.lineWidth = 2;
+  // Main effect that runs after WaveSurfer is confirmed ready
+  useEffect(() => {
+    if (!isReady) return;
+    
+    const ws = wavesurferRef.current;
+    if (!ws) {
+      console.error('WaveSurfer reference lost');
+      return;
+    }
 
-      // Begin drawing curve
-      ctx.beginPath();
-      const sliceWidth = canvas.width / bufferLength;
+    console.log('Setting up visualizer with ready WaveSurfer');
 
-      for (let i = 0; i < bufferLength; i++) {
-        const x = i * sliceWidth;
-        const y = canvas.height - (dataArray[i] / 255) * canvas.height;
-
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
+    // Create analyzer with more reliable approach
+    let analyser;
+    let audioContext;
+    let source;
+    
+    try {
+      // First try: Create our own AudioContext to use with WaveSurfer's media element
+      const mediaElement = ws.getMediaElement?.();
+      console.log('Media element available:', !!mediaElement);
+      
+      if (mediaElement) {
+        try {
+          // Create a new AudioContext - this should be more reliable
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          console.log('Created new AudioContext, state:', audioContext.state);
+          
+          // This might throw an error if the media element is already connected
+          try {
+            source = audioContext.createMediaElementSource(mediaElement);
+            analyser = audioContext.createAnalyser();
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+            console.log('Successfully connected media element to new AudioContext');
+          } catch (connectError) {
+            console.log('Error connecting to media element, trying alternative:', connectError);
+            
+            // If we can't create a new MediaElementSource, try to get WaveSurfer's
+            if (ws.backend?.getAudioContext) {
+              audioContext = ws.backend.getAudioContext();
+              analyser = audioContext.createAnalyser();
+              // Try to tap into existing audio pipeline
+              if (ws.backend?.source) {
+                ws.backend.source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                console.log('Connected to existing WaveSurfer audio pipeline');
+              } else {
+                throw new Error('Could not connect to audio source');
+              }
+            }
+          }
+        } catch (audioContextError) {
+          console.error('Error setting up AudioContext:', audioContextError);
+          return;
         }
+      } else {
+        console.error('No media element available from WaveSurfer');
+        return;
       }
+      
+      // Set analyzer properties
+      analyser.fftSize = 256;
+      
+      // Rest of visualization code...
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
 
-      ctx.stroke();
-    };
+      // Handle canvas resize
+      const resizeCanvas = () => {
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+      };
+      
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
 
-    setupVisualizer();
+      const draw = () => {
+        try {
+          analyser.getByteFrequencyData(dataArray);
+          
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const barWidth = canvas.width / bufferLength;
 
-    return () => cancelAnimationFrame(animationId);
-  }, [wavesurferRef]);
+          for (let i = 0; i < bufferLength; i++) {
+            const barHeight = (dataArray[i] / 255) * canvas.height;
+            const x = i * barWidth;
+            const y = canvas.height - barHeight;
+
+            ctx.fillStyle = `hsl(${i * 4}, 70%, 60%)`;
+            ctx.fillRect(x, y, barWidth, barHeight);
+          }
+          
+          animationRef.current = requestAnimationFrame(draw);
+        } catch (err) {
+          console.error('Visualization error:', err);
+        }
+      };
+
+      // Start animation after ensuring everything is ready
+      setTimeout(() => {
+        // Make sure audio context is resumed (important for Chrome)
+        if (audioContext.state === 'suspended') {
+          audioContext.resume().then(() => {
+            console.log('AudioContext resumed');
+            animationRef.current = requestAnimationFrame(draw);
+          });
+        } else {
+          animationRef.current = requestAnimationFrame(draw);
+        }
+      }, 500);
+
+      return () => {
+        window.removeEventListener('resize', resizeCanvas);
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+        // Clean up audio connections
+        if (analyser) {
+          try {
+            analyser.disconnect();
+          } catch (e) {
+            console.log('Failed to disconnect audio nodes:', e);
+          }
+        }
+      };
+    } catch (err) {
+      console.error('Failed to create analyzer:', err);
+      return () => {};
+    }
+  }, [isReady, wavesurferRef.current]);
 
   return (
     <div className="w-full bg-black rounded-md overflow-hidden">

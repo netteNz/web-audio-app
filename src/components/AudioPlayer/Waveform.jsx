@@ -27,9 +27,7 @@ const Waveform = ({ src, wavesurferRef, onReady }) => {
         });
 
         wavesurferRef.current = ws;
-        if (wavesurferRef && wavesurferRef.current) {
-            wavesurferRef.current.backend = ws.backend;
-        }
+
 
         ws.on('ready', async () => {
             try {

@@ -1,12 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import AudioPlayer from './components/AudioPlayer/AudioPlayer';
+import Navbar from './components/AudioPlayer/Navbar';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <main className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
-      <AudioPlayer />
-    </main>
+    <div className="min-h-screen bg-zinc-950 text-white flex flex-col">
+      <Navbar />
+      {/* Add pt-20 (padding-top) to account for the fixed navbar */}
+      <main className="flex-grow flex items-center justify-center pt-20 p-4">
+        <AudioPlayer />
+      </main>
+    </div>
   </React.StrictMode>
 );

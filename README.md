@@ -28,12 +28,12 @@ A modern, customizable web audio player built with React, Tailwind CSS, and the 
 
 ##  Features
 
-- 🔊 Audio playback with waveform + timeline scrubber
-- 🎚️ Volume control slider
-- 🖼️ Real-time audio spectrum and spectrogram visualizations
-- 🏷️ Audio metadata display (title, artist, etc.)
-- ⏱️ Animated timeline cursor during playback
-- 🧩 Modular React component structure for extensibility
+- Audio playback with waveform + timeline scrubber
+- Volume control slider
+- Real-time audio spectrum and spectrogram visualizations
+- Audio metadata display (title, artist, etc.)
+- Animated timeline cursor during playback
+- Modular React component structure for extensibility
 
 ---
 

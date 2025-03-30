@@ -50,7 +50,7 @@ Make sure to configure your base path if deploying to GitHub Pages:
 
 **vite.config.js**
 ```js
-base: '/web-audio-app/', // Use your repo name here
+base: '/web-audio-app/', // remove this line; it's for gh-pages deployment
 ```
 
 ---

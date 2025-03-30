@@ -1,23 +1,43 @@
 # web-audio-app 🎧
 
-A modern, customizable web audio player built with React, Tailwind CSS, and the Web Audio API. Features waveform rendering, metadata display, volume control, and real-time audio visualizations.
+A modern, customizable web audio player built with React, Tailwind CSS, and the Web Audio API. Includes waveform rendering, metadata display, volume control, and real-time visualizations for an interactive listening experience.
 
-## Features
+##  Technologies Used
 
-- 🎵 Audio playback with waveform and timeline
-- 🎚️ Volume control
-- 📊 Real-time spectrum and spectrogram visualizations
-- 🕒 Animated timeline cursor
-- 🏷️ Metadata display (artist, title, duration, etc.)
+### ⚛️ React
+- Frontend framework for building dynamic, component-based UI.
+- Handles app state, timeline updates, and interaction logic.
+  
+### ⚡ Vite
+- Lightning-fast dev server and optimized build tool.
+- Used for rapid development and efficient bundling of React + Tailwind CSS.
+  
+### 🎨 Tailwind CSS v4
+- Utility-first CSS framework for styling with minimal effort.
+- Fully customized dark theme with responsive UI and smooth transitions.
 
-## Tech Stack
+### 🎧 Web Audio API
+- Browser-native API for low-level audio processing and playback.
+- Powers real-time spectrum analysis, waveform drawing, and volume control.
 
-- React + Vite
-- Tailwind CSS v4
-- Web Audio API
-- music-metadata-browser
+### 📦 music-metadata-browser
+- Parses and displays audio metadata directly in the browser.
+- Used to extract tags like title, artist, album, and duration from audio files.
 
-## Getting Started
+---
+
+##  Features
+
+- 🔊 Audio playback with waveform + timeline scrubber
+- 🎚️ Volume control slider
+- 🖼️ Real-time audio spectrum and spectrogram visualizations
+- 🏷️ Audio metadata display (title, artist, etc.)
+- ⏱️ Animated timeline cursor during playback
+- 🧩 Modular React component structure for extensibility
+
+---
+
+##  Getting Started
 
 ```bash
 git clone https://github.com/nettenz/web-audio-app.git
@@ -26,6 +46,16 @@ npm install
 npm run dev
 ```
 
-## License
+Make sure to configure your base path if deploying to GitHub Pages:
+
+**vite.config.js**
+```js
+base: '/web-audio-app/', // Use your repo name here
+```
+
+---
+
+## 📄 License
 
 MIT
+

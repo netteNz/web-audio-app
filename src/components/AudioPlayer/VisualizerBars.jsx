@@ -1,9 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-const VisualizerBars = ({ wavesurferRef }) => {
+const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple' }) => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
+  const animationStyleRef = useRef(animationStyle);
   const [isAnalyzerReady, setIsAnalyzerReady] = useState(false);
+
+  // Update ref when prop changes to make it available in draw function
+  useEffect(() => {
+    animationStyleRef.current = animationStyle;
+  }, [animationStyle]);
 
   // Handle user interaction to unblock audio context
   useEffect(() => {
@@ -169,14 +175,39 @@ const VisualizerBars = ({ wavesurferRef }) => {
         const barWidth = (canvas.width / bufferLength) * 2.5;
 
         let x = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          const barHeight = (dataArray[i] / 255) * canvas.height;
+        
+        // Use ref value instead of prop directly to get current animation style
+        const currentStyle = animationStyleRef.current;
+        
+        if (currentStyle === 'minimal') {
+          // Minimal style: Simple line visualization
+          ctx.beginPath();
+          ctx.strokeStyle = '#0ea5e9'; // Cyan color matching the progress bar
+          ctx.lineWidth = 2;
+          
+          for (let i = 0; i < bufferLength; i++) {
+            const barHeight = (dataArray[i] / 255) * canvas.height;
+            
+            if (i === 0) {
+              ctx.moveTo(x, canvas.height - barHeight);
+            } else {
+              ctx.lineTo(x, canvas.height - barHeight);
+            }
+            
+            x += barWidth + 1;
+          }
+          ctx.stroke();
+        } else {
+          // Default 'simple' style: Colorful bars
+          for (let i = 0; i < bufferLength; i++) {
+            const barHeight = (dataArray[i] / 255) * canvas.height;
 
-          // Use a gradient color based on frequency
-          ctx.fillStyle = `hsl(${i * 360 / bufferLength}, 70%, 50%)`;
-          ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+            // Use a gradient color based on frequency
+            ctx.fillStyle = `hsl(${i * 360 / bufferLength}, 70%, 50%)`;
+            ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
 
-          x += barWidth + 1;
+            x += barWidth + 1;
+          }
         }
 
         animationRef.current = requestAnimationFrame(draw);

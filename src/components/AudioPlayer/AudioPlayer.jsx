@@ -5,12 +5,14 @@ import TrackInfo from './TrackInfo';
 import Waveform from './Waveform';
 import VolumeSlider from './VolumeSlider';
 import VisualizerBars from './VisualizerBars';
+import AnimationStyleDropdown from './AnimationStyleDropdown';
 
 const AudioPlayer = () => {
   const wavesurferRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isWaveReady, setIsWaveReady] = useState(false);
   const [volume, setVolume] = useState(1);
+  const [animationStyle, setAnimationStyle] = useState('minimal');
 
   const [metadata, setMetadata] = useState({
     title: 'Neuro Pulse',
@@ -82,9 +84,19 @@ const AudioPlayer = () => {
         onReady={() => setIsWaveReady(true)}
       />
 
-      {isWaveReady && <VisualizerBars wavesurferRef={wavesurferRef} />}
+      {isWaveReady && <VisualizerBars 
+        wavesurferRef={wavesurferRef}
+        animationStyle={animationStyle}
+      />}
 
-      <div className="flex justify-center items-center gap-6 pt-2">
+      <div className="flex items-center justify-between gap-6 pt-2 px-6">
+        <div className="w-40">
+          <AnimationStyleDropdown 
+            style={animationStyle} 
+            onChange={setAnimationStyle} 
+            label="Style"
+          />
+        </div>
         <AudioControls isPlaying={isPlaying} onPlayPause={togglePlay} />
         <div className="w-full max-w-xs">
           <VolumeSlider volume={volume} onChange={handleVolumeChange} />

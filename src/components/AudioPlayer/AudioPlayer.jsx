@@ -26,28 +26,28 @@ const AudioPlayer = () => {
 
   const handleAudioLoad = (file) => {
     if (!file) return;
-    
+
     // Create object URL for the file
     const objectUrl = URL.createObjectURL(file);
     setAudioSrc(objectUrl);
     setIsWaveReady(false);
-    
+
     // Clean up previous wavesurfer instance if needed
     if (wavesurferRef.current) {
       wavesurferRef.current.destroy();
       wavesurferRef.current = null;
     }
-    
+
     // Extract metadata
     const fetchMetadata = async () => {
       try {
         const meta = await parseBlob(file);
-        
+
         const pictureData = meta.common.picture?.[0];
         const pictureUrl = pictureData
           ? URL.createObjectURL(new Blob([pictureData.data]))
           : null;
-          
+
         setMetadata({
           title: meta.common.title || file.name || 'Unknown Title',
           artist: meta.common.artist || 'Unknown Artist',
@@ -64,7 +64,7 @@ const AudioPlayer = () => {
         });
       }
     };
-    
+
     fetchMetadata();
   };
 
@@ -73,16 +73,16 @@ const AudioPlayer = () => {
     e.preventDefault();
     setDragging(true);
   };
-  
+
   const handleDragLeave = (e) => {
     e.preventDefault();
     setDragging(false);
   };
-  
+
   const handleDrop = (e) => {
     e.preventDefault();
     setDragging(false);
-    
+
     const file = e.dataTransfer.files[0];
     if (file && file.type.includes('audio/')) {
       handleAudioLoad(file);
@@ -122,7 +122,7 @@ const AudioPlayer = () => {
 
       fetchMetadata();
     }
-    
+
     // Clean up object URLs when component unmounts
     return () => {
       if (audioSrc.startsWith('blob:')) {
@@ -160,7 +160,7 @@ const AudioPlayer = () => {
   };
 
   return (
-    <div 
+    <div
       className={`w-full max-w-4xl mx-auto mt-10 p-6 rounded-xl bg-zinc-900 text-white space-y-8 shadow-lg transition-colors ${dragging ? 'bg-zinc-800 border-2 border-dashed border-cyan-400' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -168,7 +168,7 @@ const AudioPlayer = () => {
     >
       <div className="flex justify-between items-center">
         <TrackInfo metadata={metadata} />
-        
+
         <label className="cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-white py-2 px-4 rounded-md transition-colors flex items-center gap-2">
           <Upload size={16} />
           <span>Load Audio</span>
@@ -182,16 +182,16 @@ const AudioPlayer = () => {
         onReady={() => setIsWaveReady(true)}
       />
 
-      {isWaveReady && <VisualizerBars 
+      {isWaveReady && <VisualizerBars
         wavesurferRef={wavesurferRef}
         animationStyle={animationStyle}
       />}
 
       <div className="flex items-center justify-between gap-6 pt-2 px-6">
         <div className="w-40">
-          <AnimationStyleDropdown 
-            style={animationStyle} 
-            onChange={setAnimationStyle} 
+          <AnimationStyleDropdown
+            style={animationStyle}
+            onChange={setAnimationStyle}
             label="Style"
           />
         </div>
@@ -202,8 +202,24 @@ const AudioPlayer = () => {
       </div>
 
       {!isWaveReady && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 rounded-xl">
-          <div className="text-white text-lg">Loading audio...</div>
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 bg-opacity-80 backdrop-blur-sm rounded-xl z-10 transition-all duration-300 animate-fadein">
+          <div className="flex flex-col items-center space-y-4 p-6 bg-zinc-800 rounded-lg shadow-xl border border-zinc-700">
+            <div className="flex items-end h-12 space-x-1">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-2 bg-cyan-500 rounded-full animate-pulse"
+                  style={{
+                    height: `${Math.random() * 100}%`,
+                    animationDelay: `${i * 0.1}s`,
+                    animationDuration: '0.8s'
+                  }}
+                ></div>
+              ))}
+            </div>
+            <div className="text-white text-lg font-medium">Loading audio...</div>
+            <div className="text-zinc-400 text-sm">{metadata.title || 'Preparing your track'}</div>
+          </div>
         </div>
       )}
     </div>

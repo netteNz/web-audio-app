@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import AudioPlayer from './components/AudioPlayer/AudioPlayer';
 import Navbar from './components/AudioPlayer/Navbar';
+import { pageView } from './utils/analytics';
 import './index.css';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+// Analytics wrapper component
+const App = () => {
+  useEffect(() => {
+    // Track page view when the app loads
+    pageView('Web Audio Player');
+  }, []);
+
+  return (
     <div className="min-h-screen bg-zinc-950 text-white flex flex-col">
       <Navbar />
       {/* Add pt-20 (padding-top) to account for the fixed navbar */}
@@ -13,5 +20,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <AudioPlayer />
       </main>
     </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
   </React.StrictMode>
 );

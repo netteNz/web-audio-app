@@ -1,31 +1,50 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 
-const AnimationStyleDropdown = ({ style, onChange, label = "Style" }) => {
-  const id = `animation-style-${Math.random().toString(36).substr(2, 9)}`;
-  
+const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const styles = [
+    { id: 'simple', name: 'Bar Graph' },
+    { id: 'minimal', name: 'Line' },
+    { id: 'wave', name: 'Wave Effect' }
+  ];
+
+  const selectedStyle = styles.find(s => s.id === style) || styles[0];
+
+  const handleSelect = (styleId) => {
+    onChange(styleId);
+    setIsOpen(false);
+  };
+
   return (
-    <div className="flex items-center gap-2">
-      {label && (
-        <label htmlFor={id} className="text-sm text-gray-400">
-          {label}
-        </label>
-      )}
-      <div className="relative flex-grow">
-        <select
-          id={id}
-          value={style}
-          onChange={(e) => onChange(e.target.value)}
-          className="appearance-none w-full bg-zinc-800 border border-zinc-700 text-white py-2 px-4 pr-8 rounded-md focus:outline-none focus:ring-1 focus:ring-cyan-500"
-        >
-          <option value="simple">Simple</option>
-          <option value="minimal">Minimal</option>
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
-          <svg className="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-          </svg>
+    <div className="relative">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between w-full px-3 py-2 text-sm bg-zinc-800 rounded-md"
+      >
+        <span className="text-zinc-400">{label}:</span>
+        <div className="flex items-center">
+          <span className="mr-2 text-white">{selectedStyle.name}</span>
+          <ChevronDown size={16} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </div>
-      </div>
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-20 w-full mt-1 bg-zinc-800 rounded-md shadow-lg py-1 border border-zinc-700">
+          {styles.map((styleOption) => (
+            <button
+              key={styleOption.id}
+              className={`block w-full text-left px-3 py-2 text-sm hover:bg-zinc-700 ${
+                styleOption.id === style ? 'bg-zinc-700 text-cyan-400' : 'text-white'
+              }`}
+              onClick={() => handleSelect(styleOption.id)}
+            >
+              {styleOption.name}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

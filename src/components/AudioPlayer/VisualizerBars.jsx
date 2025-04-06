@@ -5,6 +5,7 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple' }) => {
   const animationRef = useRef(null);
   const animationStyleRef = useRef(animationStyle);
   const [isAnalyzerReady, setIsAnalyzerReady] = useState(false);
+  const timeRef = useRef(0);
 
   // Update ref when prop changes to make it available in draw function
   useEffect(() => {
@@ -143,7 +144,6 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple' }) => {
       if (!connected) {
         console.log("Could not connect to any audio source, using fallback visualization");
         // We'll still create a visualization but it won't be connected to audio
-        // This at least shows something is happening
       }
       
       // Set up canvas for visualization
@@ -160,7 +160,10 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple' }) => {
       window.addEventListener('resize', resizeCanvas);
 
       // Animation function
-      function draw() {
+      function draw(timestamp) {
+        // Update our time reference
+        timeRef.current = timestamp || 0;
+        
         if (connected) {
           analyser.getByteFrequencyData(dataArray);
         } else {
@@ -174,17 +177,57 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple' }) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         const barWidth = (canvas.width / bufferLength) * 2.5;
 
-        let x = 0;
-        
         // Use ref value instead of prop directly to get current animation style
         const currentStyle = animationStyleRef.current;
         
-        if (currentStyle === 'minimal') {
+        if (currentStyle === 'wave') {
+          // Wave visualization
+          ctx.beginPath();
+          ctx.fillStyle = 'rgba(14, 165, 233, 0.2)'; // Cyan with transparency
+          
+          // Draw the bottom line at canvas height
+          ctx.moveTo(0, canvas.height);
+          
+          let x = 0;  // Start from 0 and increment like the line effect
+          for (let i = 0; i < bufferLength; i++) {
+            const barHeight = (dataArray[i] / 255) * canvas.height;
+            const y = canvas.height - barHeight;
+            
+            ctx.lineTo(x, y);
+            
+            x += barWidth + 1; // Use the same increment as the line effect
+          }
+          
+          // Complete the path back to the bottom
+          ctx.lineTo(canvas.width, canvas.height);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Add a stroke on top of the fill
+          ctx.beginPath();
+          x = 0;  // Reset x for the stroke
+          for (let i = 0; i < bufferLength; i++) {
+            const barHeight = (dataArray[i] / 255) * canvas.height;
+            const y = canvas.height - barHeight;
+            
+            if (i === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+            
+            x += barWidth + 1;
+          }
+          ctx.strokeStyle = '#0ea5e9';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (currentStyle === 'minimal') {
           // Minimal style: Simple line visualization
           ctx.beginPath();
           ctx.strokeStyle = '#0ea5e9'; // Cyan color matching the progress bar
           ctx.lineWidth = 2;
           
+          let x = 0;
           for (let i = 0; i < bufferLength; i++) {
             const barHeight = (dataArray[i] / 255) * canvas.height;
             
@@ -199,6 +242,7 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple' }) => {
           ctx.stroke();
         } else {
           // Default 'simple' style: Colorful bars
+          let x = 0;
           for (let i = 0; i < bufferLength; i++) {
             const barHeight = (dataArray[i] / 255) * canvas.height;
 

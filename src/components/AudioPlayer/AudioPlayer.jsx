@@ -1,19 +1,20 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { parseBlob } from 'music-metadata';
+import { Upload } from 'lucide-react';
 import AudioControls from './AudioControls';
 import TrackInfo from './TrackInfo';
 import Waveform from './Waveform';
 import VolumeSlider from './VolumeSlider';
 import VisualizerBars from './VisualizerBars';
 import AnimationStyleDropdown from './AnimationStyleDropdown';
-import { Upload } from 'lucide-react';
+import { trackEvent } from '../../utils/analytics'; // Import trackEvent function
 
 const AudioPlayer = () => {
   const wavesurferRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isWaveReady, setIsWaveReady] = useState(false);
   const [volume, setVolume] = useState(1);
-  const [animationStyle, setAnimationStyle] = useState('minimal');
+  const [animationStyle, setAnimationStyle] = useState('wave');
   const [dragging, setDragging] = useState(false);
   const [audioSrc, setAudioSrc] = useState(import.meta.env.BASE_URL + 'example.mp3');
 
@@ -26,28 +27,35 @@ const AudioPlayer = () => {
 
   const handleAudioLoad = (file) => {
     if (!file) return;
-
+    
+    // Track audio load event
+    trackEvent('audio_load', {
+      file_type: file.type,
+      file_size: Math.round(file.size / 1024), // Size in KB
+      file_name: file.name // This could be personally identifiable, use with caution
+    });
+    
     // Create object URL for the file
     const objectUrl = URL.createObjectURL(file);
     setAudioSrc(objectUrl);
     setIsWaveReady(false);
-
+    
     // Clean up previous wavesurfer instance if needed
     if (wavesurferRef.current) {
       wavesurferRef.current.destroy();
       wavesurferRef.current = null;
     }
-
+    
     // Extract metadata
     const fetchMetadata = async () => {
       try {
         const meta = await parseBlob(file);
-
+        
         const pictureData = meta.common.picture?.[0];
         const pictureUrl = pictureData
           ? URL.createObjectURL(new Blob([pictureData.data]))
           : null;
-
+          
         setMetadata({
           title: meta.common.title || file.name || 'Unknown Title',
           artist: meta.common.artist || 'Unknown Artist',
@@ -64,7 +72,7 @@ const AudioPlayer = () => {
         });
       }
     };
-
+    
     fetchMetadata();
   };
 
@@ -73,16 +81,16 @@ const AudioPlayer = () => {
     e.preventDefault();
     setDragging(true);
   };
-
+  
   const handleDragLeave = (e) => {
     e.preventDefault();
     setDragging(false);
   };
-
+  
   const handleDrop = (e) => {
     e.preventDefault();
     setDragging(false);
-
+    
     const file = e.dataTransfer.files[0];
     if (file && file.type.includes('audio/')) {
       handleAudioLoad(file);
@@ -91,7 +99,7 @@ const AudioPlayer = () => {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (file && file.type.includes('audio/')) {
       handleAudioLoad(file);
     }
   };
@@ -134,6 +142,7 @@ const AudioPlayer = () => {
     };
   }, [audioSrc]);
 
+  // Toggle play state
   const togglePlay = async () => {
     const ws = wavesurferRef.current;
 
@@ -148,7 +157,15 @@ const AudioPlayer = () => {
       }
 
       ws.playPause();
-      setIsPlaying(ws.isPlaying());
+      const isNowPlaying = ws.isPlaying();
+      setIsPlaying(isNowPlaying);
+      
+      // Track play/pause events
+      trackEvent(isNowPlaying ? 'audio_play' : 'audio_pause', {
+        title: metadata.title,
+        current_time: Math.round(ws.getCurrentTime()),
+        duration: Math.round(ws.getDuration())
+      });
     }
   };
 
@@ -156,7 +173,25 @@ const AudioPlayer = () => {
     setVolume(val);
     if (wavesurferRef.current) {
       wavesurferRef.current.setVolume(val);
+      
+      // Only track significant volume changes to avoid too many events
+      if (Math.abs(val - volume) > 0.1) {
+        trackEvent('volume_change', { 
+          value: Math.round(val * 10) / 10 // Round to 1 decimal place
+        });
+      }
     }
+  };
+  
+  // Handle visualization style change
+  const handleStyleChange = (newStyle) => {
+    setAnimationStyle(newStyle);
+    
+    // Track visualization style change
+    trackEvent('visualization_change', {
+      from: animationStyle,
+      to: newStyle
+    });
   };
 
   return (
@@ -168,7 +203,7 @@ const AudioPlayer = () => {
     >
       <div className="flex justify-between items-center">
         <TrackInfo metadata={metadata} />
-
+        
         <label className="cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-white py-2 px-4 rounded-md transition-colors flex items-center gap-2">
           <Upload size={16} />
           <span>Load Audio</span>
@@ -191,7 +226,7 @@ const AudioPlayer = () => {
         <div className="w-40">
           <AnimationStyleDropdown
             style={animationStyle}
-            onChange={setAnimationStyle}
+            onChange={handleStyleChange} // Using our wrapped handler
             label="Style"
           />
         </div>

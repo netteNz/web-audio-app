@@ -19,6 +19,14 @@ const App = () => {
       <main className="flex-grow flex items-center justify-center pt-20 p-4">
         <AudioPlayer />
       </main>
+      
+      {/* Footer */}
+      <footer 
+        className="w-full p-4 bg-opacity-50 bg-gray-900 text-center text-sm text-gray-400 mt-auto"
+        style={{ fontFamily: "'JetBrains Mono', monospace" }}
+      >
+        <p>&copy; 2025 Emanuel Lugo. All rights reserved.</p>
+      </footer>
     </div>
   );
 };

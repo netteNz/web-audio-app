@@ -1,18 +1,22 @@
-// Google Analytics utility functions
+// utils/analytics.js
 import ReactGA from 'react-ga4';
 
 export const initGA = () => {
-  ReactGA.initialize('G-379487672');
+  ReactGA.initialize('G-379487672'); // ✅ Make sure this matches your GA4 ID
 };
 
-export const pageView = (title) => {
+export const pageView = (title = 'Web Audio App') => {
   ReactGA.send({
     hitType: 'pageview',
     page: window.location.pathname,
-    title: title,
+    title,
+    debug_mode: true, // 🔍 Ensures it shows in DebugView
   });
 };
 
 export const trackEvent = (eventName, params = {}) => {
-  ReactGA.event(eventName, params);
+  ReactGA.gtag('event', eventName, {
+    ...params,
+    debug_mode: true, // 🔍 Forces events to appear in DebugView
+  });
 };

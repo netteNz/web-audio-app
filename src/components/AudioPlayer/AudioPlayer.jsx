@@ -27,35 +27,35 @@ const AudioPlayer = () => {
 
   const handleAudioLoad = (file) => {
     if (!file) return;
-    
+
     // Track audio load event
     trackEvent('audio_load', {
       file_type: file.type,
       file_size: Math.round(file.size / 1024), // Size in KB
       file_name: file.name // This could be personally identifiable, use with caution
     });
-    
+
     // Create object URL for the file
     const objectUrl = URL.createObjectURL(file);
     setAudioSrc(objectUrl);
     setIsWaveReady(false);
-    
+
     // Clean up previous wavesurfer instance if needed
     if (wavesurferRef.current) {
       wavesurferRef.current.destroy();
       wavesurferRef.current = null;
     }
-    
+
     // Extract metadata
     const fetchMetadata = async () => {
       try {
         const meta = await parseBlob(file);
-        
+
         const pictureData = meta.common.picture?.[0];
         const pictureUrl = pictureData
           ? URL.createObjectURL(new Blob([pictureData.data]))
           : null;
-          
+
         setMetadata({
           title: meta.common.title || file.name || 'Unknown Title',
           artist: meta.common.artist || 'Unknown Artist',
@@ -72,7 +72,7 @@ const AudioPlayer = () => {
         });
       }
     };
-    
+
     fetchMetadata();
   };
 
@@ -81,16 +81,16 @@ const AudioPlayer = () => {
     e.preventDefault();
     setDragging(true);
   };
-  
+
   const handleDragLeave = (e) => {
     e.preventDefault();
     setDragging(false);
   };
-  
+
   const handleDrop = (e) => {
     e.preventDefault();
     setDragging(false);
-    
+
     const file = e.dataTransfer.files[0];
     if (file && file.type.includes('audio/')) {
       handleAudioLoad(file);
@@ -159,7 +159,7 @@ const AudioPlayer = () => {
       ws.playPause();
       const isNowPlaying = ws.isPlaying();
       setIsPlaying(isNowPlaying);
-      
+
       // Track play/pause events
       trackEvent(isNowPlaying ? 'audio_play' : 'audio_pause', {
         title: metadata.title,
@@ -173,20 +173,38 @@ const AudioPlayer = () => {
     setVolume(val);
     if (wavesurferRef.current) {
       wavesurferRef.current.setVolume(val);
-      
+
       // Only track significant volume changes to avoid too many events
       if (Math.abs(val - volume) > 0.1) {
-        trackEvent('volume_change', { 
+        trackEvent('volume_change', {
           value: Math.round(val * 10) / 10 // Round to 1 decimal place
         });
       }
     }
   };
-  
+
+  const handleSeekForward = () => {
+    const ws = wavesurferRef.current;
+    if (ws && isWaveReady) {
+      const newTime = ws.getCurrentTime() + 10;
+      // Clamp to waveform duration (between 0 and 1)
+      ws.seekTo(Math.min(newTime / ws.getDuration(), 1));
+    }
+  };
+
+  const handleSeekBackward = () => {
+    const ws = wavesurferRef.current;
+    if (ws && isWaveReady) {
+      const newTime = ws.getCurrentTime() - 10;
+      // Clamp to waveform duration (between 0 and 1)
+      ws.seekTo(Math.max(newTime / ws.getDuration(), 0));
+    }
+  };
+
   // Handle visualization style change
   const handleStyleChange = (newStyle) => {
     setAnimationStyle(newStyle);
-    
+
     // Track visualization style change
     trackEvent('visualization_change', {
       from: animationStyle,
@@ -203,7 +221,7 @@ const AudioPlayer = () => {
     >
       <div className="flex justify-between items-center">
         <TrackInfo metadata={metadata} />
-        
+
         <label className="cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-white py-2 px-4 rounded-md transition-colors flex items-center gap-2">
           <Upload size={16} />
           <span>Load Audio</span>
@@ -230,7 +248,12 @@ const AudioPlayer = () => {
             label="Style"
           />
         </div>
-        <AudioControls isPlaying={isPlaying} onPlayPause={togglePlay} />
+        <AudioControls 
+        isPlaying={isPlaying}
+        onPlayPause={togglePlay}
+        onSeekForward={handleSeekForward}
+        onSeekBackward={handleSeekBackward}
+        />
         <div className="w-full max-w-xs">
           <VolumeSlider volume={volume} onChange={handleVolumeChange} />
         </div>

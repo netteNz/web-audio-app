@@ -17,6 +17,7 @@ const AudioPlayer = () => {
   const [animationStyle, setAnimationStyle] = useState('wave');
   const [dragging, setDragging] = useState(false);
   const [audioSrc, setAudioSrc] = useState(import.meta.env.BASE_URL + 'example.mp3');
+  const [duration, setDuration] = useState(0);
 
   const [metadata, setMetadata] = useState({
     title: 'Neuro Pulse',
@@ -142,6 +143,29 @@ const AudioPlayer = () => {
     };
   }, [audioSrc]);
 
+  useEffect(() => {
+    const handleReady = () => {
+      if (wavesurferRef.current) {
+        setDuration(wavesurferRef.current.getDuration());
+      }
+    };
+
+    if (wavesurferRef.current) {
+      wavesurferRef.current.on('ready', handleReady);
+      
+      // If wavesurfer is already ready, get the duration immediately
+      if (wavesurferRef.current.isReady) {
+        handleReady();
+      }
+    }
+
+    return () => {
+      if (wavesurferRef.current) {
+        wavesurferRef.current.un('ready', handleReady);
+      }
+    };
+  }, [wavesurferRef.current]);
+
   // Toggle play state
   const togglePlay = async () => {
     const ws = wavesurferRef.current;
@@ -220,7 +244,7 @@ const AudioPlayer = () => {
       onDrop={handleDrop}
     >
       <div className="flex justify-between items-center">
-        <TrackInfo metadata={metadata} />
+        <TrackInfo metadata={metadata} duration={duration} />
 
         <label className="cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-white py-2 px-4 rounded-md transition-colors flex items-center gap-2">
           <Upload size={16} />

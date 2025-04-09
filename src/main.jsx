@@ -2,12 +2,13 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import AudioPlayer from './components/AudioPlayer/AudioPlayer';
 import Navbar from './components/AudioPlayer/Navbar';
-import { pageView } from './utils/analytics';
+import { initGA, pageView } from './utils/analytics';
 import './index.css';
 
 // Analytics wrapper component
 const App = () => {
   useEffect(() => {
+    initGA(); // Initialize Google Analytics
     // Track page view when the app loads
     pageView('Web Audio Player');
   }, []);

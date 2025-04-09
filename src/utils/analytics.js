@@ -1,17 +1,18 @@
 // Google Analytics utility functions
+import ReactGA from 'react-ga4';
+
+export const initGA = () => {
+  ReactGA.initialize('G-379487672');
+};
 
 export const pageView = (title) => {
-    if (!window.gtag) return;
-    
-    window.gtag('event', 'page_view', {
-      page_title: title,
-      page_location: window.location.href,
-      page_path: window.location.pathname,
-    });
-  };
-  
-  export const trackEvent = (eventName, params = {}) => {
-    if (!window.gtag) return;
-    
-    window.gtag('event', eventName, params);
-  };
+  ReactGA.send({
+    hitType: 'pageview',
+    page: window.location.pathname,
+    title: title,
+  });
+};
+
+export const trackEvent = (eventName, params = {}) => {
+  ReactGA.event(eventName, params);
+};

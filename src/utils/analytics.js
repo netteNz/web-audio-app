@@ -10,13 +10,13 @@ export const pageView = (title = 'Web Audio App') => {
     hitType: 'pageview',
     page: window.location.pathname,
     title,
-    debug_mode: true, // 🔍 Ensures it shows in DebugView
+    debug_mode: true, // Ensures it shows in DebugView
   });
 };
 
 export const trackEvent = (eventName, params = {}) => {
   ReactGA.gtag('event', eventName, {
     ...params,
-    debug_mode: true, // 🔍 Forces events to appear in DebugView
+    debug_mode: true, // Forces events to appear in DebugView
   });
 };

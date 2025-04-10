@@ -264,21 +264,25 @@ const AudioPlayer = () => {
         animationStyle={animationStyle}
       />}
 
-      <div className="flex items-center justify-between gap-6 pt-2 px-6">
-        <div className="w-40">
+      <div className="grid grid-cols-3 items-center pt-2 px-6">
+        <div className="justify-self-start w-40">
           <AnimationStyleDropdown
             style={animationStyle}
-            onChange={handleStyleChange} // Using our wrapped handler
+            onChange={handleStyleChange}
             label="Style"
           />
         </div>
-        <AudioControls 
-        isPlaying={isPlaying}
-        onPlayPause={togglePlay}
-        onSeekForward={handleSeekForward}
-        onSeekBackward={handleSeekBackward}
-        />
-        <div className="w-full max-w-xs">
+        
+        <div className="justify-self-center">
+          <AudioControls 
+            isPlaying={isPlaying}
+            onPlayPause={togglePlay}
+            onSeekForward={handleSeekForward}
+            onSeekBackward={handleSeekBackward}
+          />
+        </div>
+        
+        <div className="justify-self-end">
           <VolumeSlider volume={volume} onChange={handleVolumeChange} />
         </div>
       </div>

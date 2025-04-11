@@ -5,9 +5,9 @@ const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const styles = [
-    { id: 'simple', name: 'Bar Graph' },
+    { id: 'simple', name: 'Bars' },
     { id: 'minimal', name: 'Line' },
-    { id: 'wave', name: 'Wave Effect' }
+    { id: 'wave', name: 'Wave' }
   ];
 
   const selectedStyle = styles.find(s => s.id === style) || styles[0];
@@ -18,7 +18,7 @@ const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative z-20">
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between w-full px-3 py-2 text-sm bg-zinc-800 rounded-md"
@@ -31,7 +31,7 @@ const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute z-20 w-full mt-1 bg-zinc-800 rounded-md shadow-lg py-1 border border-zinc-700">
+        <div className="absolute top-full left-0 mt-1 w-full bg-zinc-800 rounded-md shadow-lg py-1 z-30 border border-zinc-700">
           {styles.map((styleOption) => (
             <button
               key={styleOption.id}

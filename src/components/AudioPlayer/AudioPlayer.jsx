@@ -264,27 +264,46 @@ const AudioPlayer = () => {
         animationStyle={animationStyle}
       />}
 
-      <div className="grid grid-cols-3 items-center pt-2 px-6">
-        <div className="justify-self-start w-40">
-          <AnimationStyleDropdown
-            style={animationStyle}
-            onChange={handleStyleChange}
-            label="Style"
-          />
+      <div className="flex flex-col gap-4 pt-2 px-2 md:px-6">
+        {/* Container that changes based on screen size */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-4">
+          {/* Animation style dropdown - visible on desktop (left side) */}
+          <div className="hidden sm:block sm:w-40">
+            <AnimationStyleDropdown
+              style={animationStyle}
+              onChange={handleStyleChange}
+              label="Style"
+            />
+          </div>
+          
+          {/* Play controls - always in middle for desktop, first for mobile */}
+          <div className="order-1 flex justify-center w-full">
+            <AudioControls 
+              isPlaying={isPlaying}
+              onPlayPause={togglePlay}
+              onSeekForward={handleSeekForward}
+              onSeekBackward={handleSeekBackward}
+            />
+          </div>
+          
+          {/* Volume control - third on mobile, right on desktop */}
+          <div className="order-3 sm:order-3 flex justify-center sm:justify-end w-full sm:w-auto">
+            <VolumeSlider volume={volume} onChange={handleVolumeChange} />
+          </div>
+          
+          {/* Animation style dropdown - second on mobile only (full width) */}
+          <div className="order-2 sm:hidden w-full flex justify-center">
+            <div className="w-full max-w-[200px]">
+              <AnimationStyleDropdown
+                style={animationStyle}
+                onChange={handleStyleChange}
+                label="Style"
+              />
+            </div>
+          </div>
         </div>
         
-        <div className="justify-self-center">
-          <AudioControls 
-            isPlaying={isPlaying}
-            onPlayPause={togglePlay}
-            onSeekForward={handleSeekForward}
-            onSeekBackward={handleSeekBackward}
-          />
-        </div>
-        
-        <div className="justify-self-end">
-          <VolumeSlider volume={volume} onChange={handleVolumeChange} />
-        </div>
+        {/* Remove the extra dropdown that was below for desktop view */}
       </div>
 
       {!isWaveReady && (

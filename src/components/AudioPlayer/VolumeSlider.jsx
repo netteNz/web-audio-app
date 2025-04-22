@@ -6,7 +6,9 @@ import { Volume, Volume1, Volume2, VolumeX } from 'lucide-react';
 const VolumeSlider = ({ volume, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const sliderRef = useRef(null);
-  const timeoutRef = useRef(null); // Reference to store our timeout
+  const timeoutRef = useRef(null);
+  const isMobileRef = useRef(false);
+  const previousVolumeRef = useRef(1); // Store previous volume level
   
   // Choose appropriate volume icon based on level
   const getVolumeIcon = () => {
@@ -16,35 +18,42 @@ const VolumeSlider = ({ volume, onChange }) => {
     return <Volume2 size={20} />;
   };
 
+  // Update previousVolume whenever volume changes (but not to zero)
+  useEffect(() => {
+    if (volume > 0) {
+      previousVolumeRef.current = volume;
+    }
+  }, [volume]);
+
   // Start auto-hide timer
   const startAutoHideTimer = () => {
-    // Clear any existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     
-    // Set new timeout - hide after 3 seconds
     timeoutRef.current = setTimeout(() => {
       setIsOpen(false);
-    }, 3000); // 3 seconds
+    }, 3000);
   };
 
-  // Handle opening the slider
-  const handleOpenSlider = () => {
-    setIsOpen(true);
-    startAutoHideTimer();
-  };
-
-  // Toggle slider and handle timeouts
-  const toggleSlider = () => {
-    if (!isOpen) {
-      setIsOpen(true);
+  // Handle button click based on device and current state
+  const handleVolumeButtonClick = (e) => {
+    // Prevent default to ensure we control behavior fully
+    e.preventDefault();
+    
+    // If the slider is already open, toggle mute
+    if (isOpen) {
+      // If currently muted, restore to previous volume instead of max
+      if (volume === 0) {
+        onChange(previousVolumeRef.current);
+      } else {
+        onChange(0); // Mute
+      }
       startAutoHideTimer();
     } else {
-      setIsOpen(false);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      // Just open the slider on first click
+      setIsOpen(true);
+      startAutoHideTimer();
     }
   };
 
@@ -54,6 +63,11 @@ const VolumeSlider = ({ volume, onChange }) => {
       startAutoHideTimer();
     }
   };
+
+  // Detect touch device on mount
+  useEffect(() => {
+    isMobileRef.current = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  }, []);
 
   // Handle click outside to close the slider
   useEffect(() => {
@@ -66,14 +80,12 @@ const VolumeSlider = ({ volume, onChange }) => {
       }
     };
 
-    // Add touch and mouse events to handle both mobile and desktop
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('touchstart', handleClickOutside);
     
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
-      // Clean up timeout when component unmounts
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -82,23 +94,24 @@ const VolumeSlider = ({ volume, onChange }) => {
 
   return (
     <div className="relative flex items-center" ref={sliderRef}>
-      {/* Volume icon button that toggles mute and the slider */}
+      {/* Volume icon button */}
       <button 
-        onClick={() => onChange(volume > 0 ? 0 : 1)}
-        onMouseEnter={handleOpenSlider}
-        onTouchStart={(e) => {
-          e.stopPropagation();
-          toggleSlider();
+        onClick={handleVolumeButtonClick}
+        onMouseEnter={() => {
+          if (!isMobileRef.current) {
+            setIsOpen(true);
+            startAutoHideTimer();
+          }
         }}
         className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-full z-10"
       >
         {getVolumeIcon()}
       </button>
 
-      {/* Vertical slider that appears when open */}
+      {/* Vertical slider */}
       <div 
-        onMouseMove={handleSliderInteraction} // Reset timer when mouse moves over slider
-        onTouchMove={handleSliderInteraction} // Reset timer on touch interactions
+        onMouseMove={handleSliderInteraction}
+        onTouchMove={handleSliderInteraction}
         className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-zinc-800 p-3 rounded-lg transition-all duration-200 ${
           isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
         }`}
@@ -111,16 +124,16 @@ const VolumeSlider = ({ volume, onChange }) => {
           value={volume}
           onChange={(e) => {
             onChange(parseFloat(e.target.value));
-            handleSliderInteraction(); // Reset timer when value changes
+            handleSliderInteraction();
           }}
           className="h-24 appearance-none bg-gray-700 rounded-lg cursor-pointer accent-cyan-500"
           style={{
-            writingMode: 'bt-lr', /* IE */
-            WebkitAppearance: 'slider-vertical', /* WebKit */
+            writingMode: 'bt-lr',
+            WebkitAppearance: 'slider-vertical',
             width: '8px',
             padding: '0 5px'
           }}
-          orient="vertical" /* Firefox legacy */
+          orient="vertical"
         />
       </div>
     </div>

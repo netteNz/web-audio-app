@@ -238,7 +238,7 @@ const AudioPlayer = () => {
 
   return (
     <div
-      className={`w-full max-w-4xl mx-auto mt-10 p-6 rounded-xl bg-zinc-900 text-white space-y-8 shadow-lg transition-colors ${dragging ? 'bg-zinc-800 border-2 border-dashed border-cyan-400' : ''}`}
+      className={`w-full max-w-4xl mx-auto mt-10 p-3 sm:p-6 rounded-xl bg-zinc-900 text-white space-y-6 sm:space-y-8 shadow-lg transition-colors ${dragging ? 'bg-zinc-800 border-2 border-dashed border-cyan-400' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -259,52 +259,55 @@ const AudioPlayer = () => {
         onReady={() => setIsWaveReady(true)}
       />
 
-      {isWaveReady && <VisualizerBars
-        wavesurferRef={wavesurferRef}
-        animationStyle={animationStyle}
-      />}
+      {/* Only render the visualizer and controls when audio is ready */}
+      {isWaveReady && (
+        <>
+          <VisualizerBars
+            wavesurferRef={wavesurferRef}
+            animationStyle={animationStyle}
+          />
 
-      <div className="flex flex-col gap-4 pt-2 px-2 md:px-6">
-        {/* Container that changes based on screen size */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-4">
-          {/* Animation style dropdown - visible on desktop (left side) */}
-          <div className="hidden sm:block sm:w-40">
-            <AnimationStyleDropdown
-              style={animationStyle}
-              onChange={handleStyleChange}
-              label="Style"
-            />
-          </div>
-          
-          {/* Play controls - always in middle for desktop, first for mobile */}
-          <div className="order-1 flex justify-center w-full">
-            <AudioControls 
-              isPlaying={isPlaying}
-              onPlayPause={togglePlay}
-              onSeekForward={handleSeekForward}
-              onSeekBackward={handleSeekBackward}
-            />
-          </div>
-          
-          {/* Volume control - third on mobile, right on desktop */}
-          <div className="order-3 sm:order-3 flex justify-center sm:justify-end w-full sm:w-auto">
-            <VolumeSlider volume={volume} onChange={handleVolumeChange} />
-          </div>
-          
-          {/* Animation style dropdown - second on mobile only (full width) */}
-          <div className="order-2 sm:hidden w-full flex justify-center">
-            <div className="w-full max-w-[200px]">
-              <AnimationStyleDropdown
-                style={animationStyle}
-                onChange={handleStyleChange}
-                label="Style"
-              />
+          <div className="flex flex-col gap-3 sm:gap-4 pt-1 px-1 sm:pt-2 md:px-6">
+            {/* Container that changes based on screen size */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3 sm:gap-4">
+              {/* Animation style dropdown - visible on desktop (left side) */}
+              <div className="hidden sm:block sm:w-40">
+                <AnimationStyleDropdown
+                  style={animationStyle}
+                  onChange={handleStyleChange}
+                  label="Style"
+                />
+              </div>
+              
+              {/* Play controls - always in middle for desktop, first for mobile */}
+              <div className="order-1 flex justify-center w-full">
+                <AudioControls 
+                  isPlaying={isPlaying}
+                  onPlayPause={togglePlay}
+                  onSeekForward={handleSeekForward}
+                  onSeekBackward={handleSeekBackward}
+                />
+              </div>
+              
+              {/* Volume control - third on mobile, right on desktop */}
+              <div className="order-3 sm:order-3 flex items-center justify-end w-full sm:w-auto">
+                <VolumeSlider volume={volume} onChange={handleVolumeChange} />
+              </div>
+              
+              {/* Animation style dropdown - second on mobile only (left-aligned) */}
+              <div className="order-2 sm:hidden w-full flex items-center justify-start">
+                <div className="w-40">
+                  <AnimationStyleDropdown
+                    style={animationStyle}
+                    onChange={handleStyleChange}
+                    label="Style"
+                  />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        
-        {/* Remove the extra dropdown that was below for desktop view */}
-      </div>
+        </>
+      )}
 
       {!isWaveReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 bg-opacity-80 backdrop-blur-sm rounded-xl z-10 transition-all duration-300 animate-fadein">
@@ -317,7 +320,7 @@ const AudioPlayer = () => {
                   style={{
                     height: `${Math.random() * 100}%`,
                     animationDelay: `${i * 0.1}s`,
-                    animationDuration: '0.8s'
+                    animationDuration: '0.8s',
                   }}
                 ></div>
               ))}

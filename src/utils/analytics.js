@@ -2,7 +2,7 @@
 import ReactGA from 'react-ga4';
 
 export const initGA = () => {
-  ReactGA.initialize('G-379487672'); // ✅ Make sure this matches your GA4 ID
+  ReactGA.initialize('G-0L5LLER0MH');
 };
 
 export const pageView = (title = 'Web Audio App') => {

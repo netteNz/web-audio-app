@@ -246,9 +246,8 @@ const AudioPlayer = () => {
       <div className="flex justify-between items-center">
         <TrackInfo metadata={metadata} duration={duration} />
 
-        <label className="cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-white py-2 px-4 rounded-md transition-colors flex items-center gap-2">
-          <Upload size={16} />
-          <span>Load Audio</span>
+        <label className="cursor-pointer p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 transition-colors text-white flex items-center justify-center" title="Load Audio">
+          <Upload size={20} />
           <input type="file" accept="audio/*" className="hidden" onChange={handleFileChange} />
         </label>
       </div>
@@ -279,8 +278,8 @@ const AudioPlayer = () => {
                 />
               </div>
               
-              {/* Play controls - always in middle for desktop, first for mobile */}
-              <div className="order-1 flex justify-center w-full">
+              {/* For mobile: Horizontal container with centered play controls */}
+              <div className="flex flex-row items-center justify-center w-full sm:hidden">
                 <AudioControls 
                   isPlaying={isPlaying}
                   onPlayPause={togglePlay}
@@ -289,20 +288,33 @@ const AudioPlayer = () => {
                 />
               </div>
               
-              {/* Volume control - third on mobile, right on desktop */}
-              <div className="order-3 sm:order-3 flex items-center justify-end w-full sm:w-auto">
+              {/* For desktop: Play controls (center) */}
+              <div className="hidden sm:flex justify-center w-full">
+                <AudioControls 
+                  isPlaying={isPlaying}
+                  onPlayPause={togglePlay}
+                  onSeekForward={handleSeekForward}
+                  onSeekBackward={handleSeekBackward}
+                />
+              </div>
+              
+              {/* For desktop: Volume control (right) */}
+              <div className="hidden sm:flex items-center justify-end sm:w-auto">
                 <VolumeSlider volume={volume} onChange={handleVolumeChange} />
               </div>
               
-              {/* Animation style dropdown - second on mobile only (left-aligned) */}
-              <div className="order-2 sm:hidden w-full flex items-center justify-start">
-                <div className="w-40">
-                  <AnimationStyleDropdown
-                    style={animationStyle}
-                    onChange={handleStyleChange}
-                    label="Style"
-                  />
-                </div>
+              {/* For mobile: Volume control below play controls */}
+              <div className="flex sm:hidden items-center justify-end w-full">
+                <VolumeSlider volume={volume} onChange={handleVolumeChange} />
+              </div>
+              
+              {/* Animation style dropdown – full-width on mobile */}
+              <div className="sm:hidden w-full px-4 mt-2">
+                <AnimationStyleDropdown
+                  style={animationStyle}
+                  onChange={handleStyleChange}
+                  label="Style"
+                />
               </div>
             </div>
           </div>

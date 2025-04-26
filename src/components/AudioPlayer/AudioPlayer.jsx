@@ -289,7 +289,7 @@ const AudioPlayer = () => {
               </div>
               
               {/* For desktop: Play controls (center) */}
-              <div className="hidden sm:flex justify-center w-full">
+              <div className="hidden sm:flex justify-center w-full pr-[50px]">
                 <AudioControls 
                   isPlaying={isPlaying}
                   onPlayPause={togglePlay}

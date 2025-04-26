@@ -1,9 +1,9 @@
-import { Play, Pause, Rewind, FastForward } from 'lucide-react';
+import { Play, Pause, RotateCcw, RotateCw } from 'lucide-react';
 
 const AudioControls = ({ isPlaying, onPlayPause, onSeekBackward, onSeekForward }) => (
   <div className="flex items-center gap-4">
     <button onClick={onSeekBackward} className="p-2 bg-zinc-800 rounded-full hover:bg-zinc-700">
-      <Rewind size={20} />
+      <RotateCcw size={20} />
     </button>
 
     <button onClick={onPlayPause} className="p-3 bg-zinc-800 rounded-full hover:bg-zinc-700">
@@ -11,7 +11,7 @@ const AudioControls = ({ isPlaying, onPlayPause, onSeekBackward, onSeekForward }
     </button>
 
     <button onClick={onSeekForward} className="p-2 bg-zinc-800 rounded-full hover:bg-zinc-700">
-      <FastForward size={20} />
+      <RotateCw size={20} />
     </button>
   </div>
 );

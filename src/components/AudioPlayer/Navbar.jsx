@@ -4,8 +4,8 @@ import React from 'react';
 
 const Navbar = () => {
   return (
-    <nav 
-      className="w-full p-4 bg-opacity-100 bg-gray-900 shadow-md fixed top-0 left-0 z-10"
+    <nav
+      className="w-full px-4 py-3 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/60 fixed top-0 left-0 z-10"
       style={{ fontFamily: "'JetBrains Mono', monospace" }}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">

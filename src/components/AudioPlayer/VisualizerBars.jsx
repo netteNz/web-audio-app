@@ -298,8 +298,8 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple' }) => {
   }, [isAnalyzerReady]);
 
   return (
-    <div className="w-full bg-black rounded-md overflow-hidden">
-      <canvas ref={canvasRef} className="w-full h-32" />
+    <div className="w-full bg-zinc-950 rounded-xl overflow-hidden">
+      <canvas ref={canvasRef} className="w-full h-36" />
     </div>
   );
 };

@@ -246,7 +246,7 @@ const AudioPlayer = () => {
       <div className="flex justify-between items-center">
         <TrackInfo metadata={metadata} duration={duration} />
 
-        <label className="cursor-pointer p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 transition-colors text-white flex items-center justify-center" title="Load Audio">
+        <label className="cursor-pointer p-3 rounded-full bg-zinc-800/70 hover:bg-zinc-700 transition-all duration-150 active:scale-90 text-white flex items-center justify-center" title="Load Audio">
           <Upload size={20} />
           <input type="file" accept="audio/*" className="hidden" onChange={handleFileChange} />
         </label>

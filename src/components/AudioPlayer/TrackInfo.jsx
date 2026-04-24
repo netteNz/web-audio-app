@@ -1,8 +1,9 @@
 import React from 'react';
+import { Music } from 'lucide-react';
 
 const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds)) return '0:00';
-  
+
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds % 60);
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -17,24 +18,23 @@ const TrackInfo = ({ metadata, duration = 0 }) => {
         <img
           src={picture}
           alt="Album Cover"
-          className="w-24 h-24 sm:w-28 sm:h-28 rounded-lg shadow-md object-cover"
+          className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl shadow-lg object-cover flex-shrink-0"
         />
       ) : (
-        <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center rounded-lg shadow-md bg-zinc-800 text-sm text-zinc-400">
-          No Cover Art
+        <div className="w-28 h-28 sm:w-32 sm:h-32 flex flex-col items-center justify-center gap-1 rounded-xl shadow-lg bg-zinc-800 flex-shrink-0">
+          <Music size={30} className="text-zinc-600" />
+          <span className="text-xs text-zinc-600">No Artwork</span>
         </div>
       )}
 
-      <div>
-        <h2 className="text-xl font-semibold">{title || 'Unknown Title'}</h2>
-        <p className="text-sm text-gray-400">{artist || 'Unknown Artist'}</p>
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-gray-600">{album || 'Unknown Album'}</p>
+      <div className="min-w-0">
+        <h2 className="text-2xl font-bold text-white leading-tight truncate">{title || 'Unknown Title'}</h2>
+        <p className="text-sm text-zinc-300 mt-0.5 truncate">{artist || 'Unknown Artist'}</p>
+        <div className="flex items-center gap-2 mt-1">
+          {album && <p className="text-sm text-zinc-400 truncate">{album}</p>}
+          {duration > 0 && album && <span className="text-xs text-zinc-600">•</span>}
           {duration > 0 && (
-            <>
-              <span className="text-xs text-gray-500">•</span>
-              <p className="text-sm text-gray-500">{formatTime(duration)}</p>
-            </>
+            <p className="text-sm text-zinc-400 flex-shrink-0">{formatTime(duration)}</p>
           )}
         </div>
       </div>

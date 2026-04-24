@@ -103,7 +103,7 @@ const VolumeSlider = ({ volume, onChange }) => {
             startAutoHideTimer();
           }
         }}
-        className="p-2 bg-zinc-800 hover:bg-zinc-700 rounded-full z-10"
+        className="p-3 bg-zinc-800/70 hover:bg-zinc-700 rounded-full z-10 transition-all duration-150 active:scale-90"
       >
         {getVolumeIcon()}
       </button>

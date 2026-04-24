@@ -183,7 +183,7 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple' }) => {
         if (currentStyle === 'wave') {
           // Wave visualization
           ctx.beginPath();
-          ctx.fillStyle = 'rgba(14, 165, 233, 0.2)'; // Cyan with transparency
+          ctx.fillStyle = 'rgba(167, 139, 250, 0.2)';
           
           // Draw the bottom line at canvas height
           ctx.moveTo(0, canvas.height);
@@ -218,13 +218,12 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple' }) => {
             
             x += barWidth + 1;
           }
-          ctx.strokeStyle = '#0ea5e9';
+          ctx.strokeStyle = '#a78bfa';
           ctx.lineWidth = 2;
           ctx.stroke();
         } else if (currentStyle === 'minimal') {
-          // Minimal style: Simple line visualization
           ctx.beginPath();
-          ctx.strokeStyle = '#0ea5e9'; // Cyan color matching the progress bar
+          ctx.strokeStyle = '#a78bfa';
           ctx.lineWidth = 2;
           
           let x = 0;
@@ -247,7 +246,7 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple' }) => {
             const barHeight = (dataArray[i] / 255) * canvas.height;
 
             // Use a gradient color based on frequency
-            ctx.fillStyle = `hsl(${i * 360 / bufferLength}, 70%, 50%)`;
+            ctx.fillStyle = `hsl(${250 + (i / bufferLength) * 80}, 75%, 65%)`;
             ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
 
             x += barWidth + 1;

@@ -18,8 +18,8 @@ const Waveform = ({ src, wavesurferRef, onReady }) => {
 
     const ws = WaveSurfer.create({
       container: containerRef.current,
-      waveColor: '#64748b',
-      progressColor: '#0ea5e9',
+      waveColor: '#52525b',
+      progressColor: '#a78bfa',
       height: 100,
       responsive: true,
       url: src,

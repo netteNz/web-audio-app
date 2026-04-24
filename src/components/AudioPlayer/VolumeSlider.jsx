@@ -126,7 +126,7 @@ const VolumeSlider = ({ volume, onChange }) => {
             onChange(parseFloat(e.target.value));
             handleSliderInteraction();
           }}
-          className="h-24 appearance-none bg-gray-700 rounded-lg cursor-pointer accent-cyan-500"
+          className="h-24 appearance-none bg-zinc-700 rounded-lg cursor-pointer accent-violet-400"
           style={{
             writingMode: 'bt-lr',
             WebkitAppearance: 'slider-vertical',

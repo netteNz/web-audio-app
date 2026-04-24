@@ -64,7 +64,7 @@ const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
               className={
                 `block w-full text-left px-4 py-3 ${isMobile ? 'text-base' : 'text-sm'} hover:bg-zinc-700 rounded ${
                   styleOption.id === style
-                    ? 'bg-zinc-700 text-cyan-400'
+                    ? 'bg-zinc-700 text-violet-400'
                     : 'text-white'
                 }`
               }

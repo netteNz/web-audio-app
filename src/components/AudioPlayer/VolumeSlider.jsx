@@ -1,7 +1,4 @@
-// src/components/AudioPlayer/VolumeSlider.jsx
-
 import React, { useState, useEffect, useRef } from 'react';
-import Icon from '../Icon';
 
 const VolumeSlider = ({ volume, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,10 +9,8 @@ const VolumeSlider = ({ volume, onChange }) => {
   
   // Choose appropriate volume icon based on level
   const getVolumeIcon = () => {
-    if (volume === 0) return <Icon name="volume_off" size={22} />;
-    if (volume < 0.3) return <Icon name="volume_mute" size={22} />;
-    if (volume < 0.7) return <Icon name="volume_down" size={22} />;
-    return <Icon name="volume_up" size={22} />;
+    const name = volume === 0 ? 'volume_off' : volume < 0.3 ? 'volume_mute' : volume < 0.7 ? 'volume_down' : 'volume_up';
+    return <span className="material-symbols-rounded leading-none select-none" style={{ fontSize: 22 }}>{name}</span>;
   };
 
   // Update previousVolume whenever volume changes (but not to zero)
@@ -103,7 +98,7 @@ const VolumeSlider = ({ volume, onChange }) => {
             startAutoHideTimer();
           }
         }}
-        className="p-3 bg-zinc-800/70 hover:bg-zinc-700 rounded-full z-10 transition-all duration-150 active:scale-90"
+        className="p-3 bg-zinc-800/70 hover:bg-zinc-700 rounded-full z-10 transition-all duration-150 active:scale-90 flex items-center justify-center"
       >
         {getVolumeIcon()}
       </button>

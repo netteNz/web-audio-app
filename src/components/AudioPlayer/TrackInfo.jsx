@@ -1,5 +1,4 @@
 import React from 'react';
-import Icon from '../Icon';
 
 const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds)) return '0:00';
@@ -22,7 +21,7 @@ const TrackInfo = ({ metadata, duration = 0 }) => {
         />
       ) : (
         <div className="w-24 h-24 sm:w-32 sm:h-32 flex flex-col items-center justify-center gap-1 rounded-xl shadow-lg bg-zinc-800 flex-shrink-0">
-          <Icon name="music_note" size={28} fill className="text-zinc-600" />
+          <span className="material-symbols-rounded leading-none select-none text-zinc-600" style={{ fontSize: 28, fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 28" }}>music_note</span>
           <span className="text-xs text-zinc-600">No Artwork</span>
         </div>
       )}

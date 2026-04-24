@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { parseBlob } from 'music-metadata';
-import Icon from '../Icon';
 import AudioControls from './AudioControls';
 import TrackInfo from './TrackInfo';
 import Waveform from './Waveform';
@@ -247,7 +246,7 @@ const AudioPlayer = () => {
         <TrackInfo metadata={metadata} duration={duration} />
 
         <label className="cursor-pointer self-center sm:self-start p-3 rounded-full bg-zinc-800/70 hover:bg-zinc-700 transition-all duration-150 active:scale-90 text-white flex items-center justify-center flex-shrink-0" title="Load Audio">
-          <Icon name="upload_file" size={22} />
+          <span className="material-symbols-rounded leading-none select-none" style={{ fontSize: 22 }}>upload_file</span>
           <input type="file" accept="audio/*" className="hidden" onChange={handleFileChange} />
         </label>
       </div>

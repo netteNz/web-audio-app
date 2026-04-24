@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Icon from '../Icon';
 
 const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -43,7 +42,7 @@ const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
         <span className="text-zinc-400">{label}:</span>
         <div className="flex items-center">
           <span className="mr-2 text-white">{selectedStyle.name}</span>
-          <Icon name="expand_more" size={20} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <span className={`material-symbols-rounded leading-none select-none transition-transform ${isOpen ? 'rotate-180' : ''}`} style={{ fontSize: 20 }}>expand_more</span>
         </div>
       </button>
 

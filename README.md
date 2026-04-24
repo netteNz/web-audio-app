@@ -1,44 +1,35 @@
-# web-audio-app 🎧
+# Web Audio Player
 
-A modern, customizable web audio player built with React, Tailwind CSS, and the Web Audio API. Includes waveform rendering, metadata display, volume control, and real-time visualizations for an interactive listening experience.
+A mobile-first web audio player built with React and the Web Audio API. Load any local audio file, view real-time frequency visualizations, and control playback — all in the browser with no backend required.
 
-## Technologies Used
-
-### ⚛️ React
-
-- Frontend framework for building dynamic, component-based UI.
-- Handles app state, timeline updates, and interaction logic.
-  
-### ⚡ Vite
-
-- Lightning-fast dev server and optimized build tool.
-- Used for rapid development and efficient bundling of React + Tailwind CSS.
-  
-### 🎨 Tailwind CSS v4
-
-- Utility-first CSS framework for styling with minimal effort.
-- Fully customized dark theme with responsive UI and smooth transitions.
-
-### 🎧 Web Audio API
-
-- Browser-native API for low-level audio processing and playback.
-- Powers real-time spectrum analysis, waveform drawing, and volume control.
-
-### 📦 music-metadata-browser
-
-- Parses and displays audio metadata directly in the browser.
-- Used to extract tags like title, artist, album, and duration from audio files.
+**Live:** https://nettenz.github.io/web-audio-app
 
 ---
 
 ## Features
 
-- Audio playback with waveform + timeline scrubber
-- Volume control slider
-- Load your own audio file and playback
-- Audio metadata display (title, artist, etc.)
-- Animated timeline cursor during playback
-- Modular React component structure for extensibility
+- **Playback** — Play/pause, seek forward/backward ±10s, waveform scrubber
+- **File loading** — File picker and drag-and-drop, any browser-supported audio format
+- **Metadata** — Extracts and displays title, artist, album, artwork, and duration from file tags
+- **Visualizations** — Three real-time canvas visualizers: Bars, Line, Wave (Web Audio API AnalyserNode)
+- **Volume control** — Slider with mute toggle and memory of previous level
+- **Responsive** — Mobile-first layout, stacked now-playing view on small screens, safe-area support for notched devices
+- **Design** — Material 3 Expressive-influenced dark theme, violet accent palette, 44px+ touch targets
+
+---
+
+## Stack
+
+| | |
+|---|---|
+| React 19 | Component UI and state |
+| Vite 6 | Dev server and build |
+| Tailwind CSS v4 | Styling |
+| WaveSurfer.js 7 | Waveform rendering and seek |
+| Web Audio API | Real-time frequency analysis |
+| music-metadata | In-browser audio tag extraction |
+| Lucide React | Icons |
+| react-ga4 | Google Analytics 4 |
 
 ---
 
@@ -51,16 +42,18 @@ npm install
 npm run dev
 ```
 
-Make sure to configure your base path if deploying to GitHub Pages:
+> If running locally outside of GitHub Pages, remove the `base` option from `vite.config.js`.
 
-**vite.config.js**
+## Deploy
 
-```js
-base: '/web-audio-app/', // remove this line; it's for gh-pages deployment
+```bash
+npm run deploy
 ```
+
+Builds and pushes to the `gh-pages` branch via the `gh-pages` package.
 
 ---
 
-## 📄 License
+## License
 
 MIT

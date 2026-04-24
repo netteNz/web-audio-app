@@ -22,9 +22,9 @@ const App = () => {
       </main>
       
       {/* Footer */}
-      <footer 
-        className="w-full p-4 bg-zinc-900/50 text-center text-sm text-zinc-400 mt-auto"
-        style={{ fontFamily: "'JetBrains Mono', monospace" }}
+      <footer
+        className="w-full px-4 pt-4 bg-zinc-900/50 text-center text-sm text-zinc-400 mt-auto"
+        style={{ fontFamily: "'JetBrains Mono', monospace", paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       >
         <p>&copy; 2025 Emanuel Lugo. All rights reserved.</p>
       </footer>

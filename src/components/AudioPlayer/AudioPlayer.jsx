@@ -238,15 +238,15 @@ const AudioPlayer = () => {
 
   return (
     <div
-      className={`w-full max-w-4xl mx-auto mt-10 p-3 sm:p-6 rounded-2xl bg-zinc-900 text-white space-y-6 sm:space-y-8 shadow-xl shadow-black/40 ring-1 ring-zinc-800/50 transition-colors ${dragging ? 'bg-zinc-800 border-2 border-dashed border-violet-400' : ''}`}
+      className={`relative w-full max-w-4xl mx-auto mt-4 sm:mt-10 p-3 sm:p-6 rounded-2xl bg-zinc-900 text-white space-y-6 sm:space-y-8 shadow-xl shadow-black/40 ring-1 ring-zinc-800/50 transition-colors ${dragging ? 'bg-zinc-800 border-2 border-dashed border-violet-400' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <TrackInfo metadata={metadata} duration={duration} />
 
-        <label className="cursor-pointer p-3 rounded-full bg-zinc-800/70 hover:bg-zinc-700 transition-all duration-150 active:scale-90 text-white flex items-center justify-center" title="Load Audio">
+        <label className="cursor-pointer self-center sm:self-start p-3 rounded-full bg-zinc-800/70 hover:bg-zinc-700 transition-all duration-150 active:scale-90 text-white flex items-center justify-center flex-shrink-0" title="Load Audio">
           <Upload size={20} />
           <input type="file" accept="audio/*" className="hidden" onChange={handleFileChange} />
         </label>
@@ -322,7 +322,7 @@ const AudioPlayer = () => {
       )}
 
       {!isWaveReady && (
-        <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 bg-opacity-80 backdrop-blur-sm rounded-xl z-10 transition-all duration-300 animate-fadein">
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 bg-opacity-80 backdrop-blur-sm rounded-2xl z-10 transition-all duration-300 animate-fadein">
           <div className="flex flex-col items-center space-y-4 p-6 bg-zinc-800 rounded-lg shadow-xl border border-zinc-700">
             <div className="flex items-end h-12 space-x-1">
               {[...Array(8)].map((_, i) => (

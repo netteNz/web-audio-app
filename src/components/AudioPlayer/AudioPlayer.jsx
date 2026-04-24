@@ -13,7 +13,7 @@ const AudioPlayer = () => {
   const wavesurferRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isWaveReady, setIsWaveReady] = useState(false);
-  const [volume, setVolume] = useState(1);
+  const [volume, setVolume] = useState(0.15);
   const [animationStyle, setAnimationStyle] = useState('wave');
   const [dragging, setDragging] = useState(false);
   const [audioSrc, setAudioSrc] = useState(import.meta.env.BASE_URL + 'example.mp3');
@@ -152,8 +152,8 @@ const AudioPlayer = () => {
 
     if (wavesurferRef.current) {
       wavesurferRef.current.on('ready', handleReady);
-      
-      // If wavesurfer is already ready, get the duration immediately
+      wavesurferRef.current.setVolume(volume);
+
       if (wavesurferRef.current.isReady) {
         handleReady();
       }

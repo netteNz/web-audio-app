@@ -1,7 +1,7 @@
 // src/components/AudioPlayer/VolumeSlider.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume, Volume1, Volume2, VolumeX } from 'lucide-react';
+import Icon from '../Icon';
 
 const VolumeSlider = ({ volume, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,10 +12,10 @@ const VolumeSlider = ({ volume, onChange }) => {
   
   // Choose appropriate volume icon based on level
   const getVolumeIcon = () => {
-    if (volume === 0) return <VolumeX size={20} />;
-    if (volume < 0.3) return <Volume size={20} />;
-    if (volume < 0.7) return <Volume1 size={20} />;
-    return <Volume2 size={20} />;
+    if (volume === 0) return <Icon name="volume_off" size={22} />;
+    if (volume < 0.3) return <Icon name="volume_mute" size={22} />;
+    if (volume < 0.7) return <Icon name="volume_down" size={22} />;
+    return <Icon name="volume_up" size={22} />;
   };
 
   // Update previousVolume whenever volume changes (but not to zero)

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import Icon from '../Icon';
 
 const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -43,7 +43,7 @@ const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
         <span className="text-zinc-400">{label}:</span>
         <div className="flex items-center">
           <span className="mr-2 text-white">{selectedStyle.name}</span>
-          <ChevronDown size={16} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <Icon name="expand_more" size={20} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </button>
 

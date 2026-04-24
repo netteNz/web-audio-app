@@ -238,7 +238,7 @@ const AudioPlayer = () => {
 
   return (
     <div
-      className={`w-full max-w-4xl mx-auto mt-10 p-3 sm:p-6 rounded-xl bg-zinc-900 text-white space-y-6 sm:space-y-8 shadow-lg transition-colors ${dragging ? 'bg-zinc-800 border-2 border-dashed border-cyan-400' : ''}`}
+      className={`w-full max-w-4xl mx-auto mt-10 p-3 sm:p-6 rounded-2xl bg-zinc-900 text-white space-y-6 sm:space-y-8 shadow-xl shadow-black/40 ring-1 ring-zinc-800/50 transition-colors ${dragging ? 'bg-zinc-800 border-2 border-dashed border-cyan-400' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

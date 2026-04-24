@@ -11,7 +11,7 @@ const AudioControls = ({ isPlaying, onPlayPause, onSeekBackward, onSeekForward }
 
     <button
       onClick={onPlayPause}
-      className="p-4 bg-cyan-400 hover:bg-cyan-300 active:bg-cyan-500 text-zinc-950 rounded-full shadow-lg shadow-cyan-400/20 transition-all duration-150 active:scale-95"
+      className="p-4 bg-cyan-400 hover:bg-cyan-300 active:bg-cyan-500 text-zinc-950 rounded-full shadow-md transition-all duration-150 active:scale-95"
     >
       {isPlaying ? <Pause size={28} /> : <Play size={28} />}
     </button>

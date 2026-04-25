@@ -3,134 +3,65 @@ import React, { useState, useEffect, useRef } from 'react';
 const VolumeSlider = ({ volume, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const sliderRef = useRef(null);
-  const timeoutRef = useRef(null);
-  const isMobileRef = useRef(false);
-  const previousVolumeRef = useRef(1); // Store previous volume level
-  
-  // Choose appropriate volume icon based on level
+  const previousVolumeRef = useRef(1);
+
   const getVolumeIcon = () => {
     const name = volume === 0 ? 'volume_off' : volume < 0.3 ? 'volume_mute' : volume < 0.7 ? 'volume_down' : 'volume_up';
     return <span className="material-symbols-rounded leading-none select-none" style={{ fontSize: 22 }}>{name}</span>;
   };
 
-  // Update previousVolume whenever volume changes (but not to zero)
   useEffect(() => {
     if (volume > 0) {
       previousVolumeRef.current = volume;
     }
   }, [volume]);
 
-  // Start auto-hide timer
-  const startAutoHideTimer = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    timeoutRef.current = setTimeout(() => {
-      setIsOpen(false);
-    }, 3000);
-  };
-
-  // Handle button click based on device and current state
   const handleVolumeButtonClick = (e) => {
-    // Prevent default to ensure we control behavior fully
     e.preventDefault();
-    
-    // If the slider is already open, toggle mute
     if (isOpen) {
-      // If currently muted, restore to previous volume instead of max
-      if (volume === 0) {
-        onChange(previousVolumeRef.current);
-      } else {
-        onChange(0); // Mute
-      }
-      startAutoHideTimer();
+      onChange(volume === 0 ? previousVolumeRef.current : 0);
     } else {
-      // Just open the slider on first click
       setIsOpen(true);
-      startAutoHideTimer();
     }
   };
 
-  // Reset timer when user interacts with slider
-  const handleSliderInteraction = () => {
-    if (isOpen) {
-      startAutoHideTimer();
-    }
-  };
-
-  // Detect touch device on mount
-  useEffect(() => {
-    isMobileRef.current = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  }, []);
-
-  // Handle click outside to close the slider
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (sliderRef.current && !sliderRef.current.contains(event.target)) {
         setIsOpen(false);
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('touchstart', handleClickOutside);
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
     };
   }, []);
 
   return (
-    <div className="relative flex items-center" ref={sliderRef}>
-      {/* Volume icon button */}
-      <button 
-        onClick={handleVolumeButtonClick}
-        onMouseEnter={() => {
-          if (!isMobileRef.current) {
-            setIsOpen(true);
-            startAutoHideTimer();
-          }
-        }}
-        className="p-3 bg-zinc-800/70 hover:bg-zinc-700 rounded-full z-10 transition-all duration-150 active:scale-90 flex items-center justify-center"
-      >
-        {getVolumeIcon()}
-      </button>
-
-      {/* Vertical slider */}
-      <div 
-        onMouseMove={handleSliderInteraction}
-        onTouchMove={handleSliderInteraction}
-        className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-zinc-800 p-3 rounded-lg transition-all duration-200 ${
-          isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
-        }`}
-      >
+    <div className="relative flex items-center gap-2" ref={sliderRef}>
+      {/* Horizontal slider expands to the left */}
+      <div className={`overflow-hidden transition-all duration-200 ${isOpen ? 'w-24 opacity-100' : 'w-0 opacity-0'}`}>
         <input
           type="range"
           min="0"
           max="1"
           step="0.01"
           value={volume}
-          onChange={(e) => {
-            onChange(parseFloat(e.target.value));
-            handleSliderInteraction();
-          }}
-          className="h-24 appearance-none bg-zinc-700 rounded-lg cursor-pointer accent-violet-400"
-          style={{
-            writingMode: 'bt-lr',
-            WebkitAppearance: 'slider-vertical',
-            width: '8px',
-            padding: '0 5px'
-          }}
-          orient="vertical"
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+          className="w-24 appearance-none bg-zinc-700 rounded-lg cursor-pointer accent-violet-400 h-1.5"
         />
       </div>
+
+      <button
+        onClick={handleVolumeButtonClick}
+        className="p-3 bg-zinc-800/70 hover:bg-zinc-700 rounded-full z-10 transition-all duration-150 active:scale-90 flex items-center justify-center"
+      >
+        {getVolumeIcon()}
+      </button>
     </div>
   );
 };

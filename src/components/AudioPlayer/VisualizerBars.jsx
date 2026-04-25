@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple' }) => {
+const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple', isPlaying = false }) => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const animationStyleRef = useRef(animationStyle);
@@ -297,8 +297,8 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple' }) => {
   }, [isAnalyzerReady]);
 
   return (
-    <div className="w-full bg-zinc-950 rounded-xl overflow-hidden">
-      <canvas ref={canvasRef} className="w-full h-36" />
+    <div className={`w-full bg-zinc-950 rounded-xl overflow-hidden transition-opacity ${isPlaying ? 'opacity-100' : 'opacity-40'}`}>
+      <canvas ref={canvasRef} className="w-full h-20 sm:h-36" />
     </div>
   );
 };

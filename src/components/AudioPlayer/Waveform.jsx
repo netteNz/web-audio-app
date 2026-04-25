@@ -9,7 +9,7 @@ const formatTime = (seconds) => {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
-const Waveform = ({ src, wavesurferRef, onReady }) => {
+const Waveform = ({ src, wavesurferRef, onReady, duration = 0 }) => {
   const containerRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
 
@@ -54,8 +54,8 @@ const Waveform = ({ src, wavesurferRef, onReady }) => {
   return (
     <div className="relative w-full">
       <div ref={containerRef} className="w-full rounded overflow-hidden" />
-      <div className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-zinc-800 bg-opacity-70 px-2 py-1 rounded text-sm text-white z-10">
-        {formatTime(currentTime)}
+      <div className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-zinc-800 bg-opacity-70 px-2 py-1 rounded text-xs tabular-nums text-white z-10">
+        {duration > 0 ? `${formatTime(currentTime)} / ${formatTime(duration)}` : formatTime(currentTime)}
       </div>
     </div>
   );

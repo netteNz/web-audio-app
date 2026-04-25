@@ -47,11 +47,15 @@ const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
       </button>
 
       {isOpen && (
-        <div className={
-          isMobile
-            ? 'fixed inset-x-0 bottom-0 bg-zinc-900 rounded-t-lg p-4 z-40'
-            : 'absolute top-full left-0 mt-1 w-full bg-zinc-800 rounded-md shadow-lg py-1 z-30 border border-zinc-700'
-        }>
+        <>
+          {isMobile && (
+            <div className="fixed inset-0 bg-black/50 z-30" onClick={() => setIsOpen(false)} />
+          )}
+          <div className={
+            isMobile
+              ? 'fixed inset-x-0 bottom-0 bg-zinc-900 rounded-t-2xl p-4 z-40 border-t border-zinc-700'
+              : 'absolute top-full left-0 mt-1 w-full bg-zinc-800 rounded-md shadow-lg py-1 z-30 border border-zinc-700'
+          }>
           {isMobile && (
             <div className="flex justify-end mb-2">
               <button onClick={() => setIsOpen(false)} className="text-white text-sm">Close</button>
@@ -72,7 +76,8 @@ const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
               {styleOption.name}
             </button>
           ))}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

@@ -242,10 +242,10 @@ const AudioPlayer = () => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+      <div className="flex items-center justify-between gap-3 w-full">
         <TrackInfo metadata={metadata} duration={duration} />
 
-        <label className="cursor-pointer self-center sm:self-start p-3 rounded-full bg-zinc-800/70 hover:bg-zinc-700 transition-all duration-150 active:scale-90 text-white flex items-center justify-center flex-shrink-0" title="Load Audio">
+        <label className="cursor-pointer self-start p-3 rounded-full bg-zinc-800/70 hover:bg-zinc-700 transition-all duration-150 active:scale-90 text-white flex items-center justify-center flex-shrink-0" title="Load Audio">
           <span className="material-symbols-rounded leading-none select-none" style={{ fontSize: 22 }}>upload_file</span>
           <input type="file" accept="audio/*" className="hidden" onChange={handleFileChange} />
         </label>
@@ -255,6 +255,7 @@ const AudioPlayer = () => {
         src={audioSrc}
         wavesurferRef={wavesurferRef}
         onReady={() => setIsWaveReady(true)}
+        duration={duration}
       />
 
       {/* Only render the visualizer and controls when audio is ready */}
@@ -263,58 +264,41 @@ const AudioPlayer = () => {
           <VisualizerBars
             wavesurferRef={wavesurferRef}
             animationStyle={animationStyle}
+            isPlaying={isPlaying}
           />
 
           <div className="flex flex-col gap-3 sm:gap-4 pt-1 px-1 sm:pt-2 md:px-6">
-            {/* Container that changes based on screen size */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3 sm:gap-4">
-              {/* Animation style dropdown - visible on desktop (left side) */}
-              <div className="hidden sm:block sm:w-40">
+            {/* Controls row: [desktop dropdown] [play controls centered] [volume] */}
+            <div className="flex items-center w-full gap-2 sm:gap-4">
+              <div className="hidden sm:block sm:w-40 flex-shrink-0">
                 <AnimationStyleDropdown
                   style={animationStyle}
                   onChange={handleStyleChange}
                   label="Style"
                 />
               </div>
-              
-              {/* For mobile: Horizontal container with centered play controls */}
-              <div className="flex flex-row items-center justify-center w-full sm:hidden">
-                <AudioControls 
+
+              <div className="flex justify-center flex-1">
+                <AudioControls
                   isPlaying={isPlaying}
                   onPlayPause={togglePlay}
                   onSeekForward={handleSeekForward}
                   onSeekBackward={handleSeekBackward}
                 />
               </div>
-              
-              {/* For desktop: Play controls (center) */}
-              <div className="hidden sm:flex justify-center w-full pr-[50px]">
-                <AudioControls 
-                  isPlaying={isPlaying}
-                  onPlayPause={togglePlay}
-                  onSeekForward={handleSeekForward}
-                  onSeekBackward={handleSeekBackward}
-                />
-              </div>
-              
-              {/* For desktop: Volume control (right) */}
-              <div className="hidden sm:flex items-center justify-end sm:w-auto">
+
+              <div className="flex items-center justify-end flex-shrink-0">
                 <VolumeSlider volume={volume} onChange={handleVolumeChange} />
               </div>
-              
-              {/* For mobile: Volume control below play controls */}
-              <div className="flex sm:hidden items-center justify-end w-full">
-                <VolumeSlider volume={volume} onChange={handleVolumeChange} />
-              </div>
-              
-              {/* Animation style dropdown – full-width on mobile */}
-              <div className="sm:hidden w-full px-4 mt-2">
-                <AnimationStyleDropdown
-                  style={animationStyle}
-                  onChange={handleStyleChange}
-                  label="Style"
-                />
-              </div>
+            </div>
+
+            {/* Style dropdown — mobile only, below controls row */}
+            <div className="sm:hidden">
+              <AnimationStyleDropdown
+                style={animationStyle}
+                onChange={handleStyleChange}
+                label="Style"
+              />
             </div>
           </div>
         </>

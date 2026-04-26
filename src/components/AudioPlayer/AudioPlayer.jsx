@@ -268,8 +268,8 @@ const AudioPlayer = () => {
           />
 
           <div className="flex flex-col gap-3 sm:gap-4 pt-1 px-1 sm:pt-2 md:px-6">
-            {/* Controls row: [desktop dropdown] [play controls centered] [volume] */}
-            <div className="flex items-center justify-between w-full">
+            {/* Controls row: [desktop dropdown] [play controls absolutely centered] [volume] */}
+            <div className="relative flex items-center w-full">
               <div className="flex-1 flex justify-start min-w-0">
                 <div className="hidden sm:block w-full max-w-[10rem]">
                   <AnimationStyleDropdown
@@ -280,7 +280,7 @@ const AudioPlayer = () => {
                 </div>
               </div>
 
-              <div className="flex-none flex justify-center px-1 sm:px-4">
+              <div className="absolute left-1/2 -translate-x-1/2">
                 <AudioControls
                   isPlaying={isPlaying}
                   onPlayPause={togglePlay}

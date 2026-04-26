@@ -71,71 +71,108 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple', isPlaying = 
     let source;
     let bufferLength;
     let dataArray;
+    let isCachedPath = false;
 
     try {
-      console.log("Setting up visualizer - approach 1");
-      
-      // APPROACH 1: Use WaveSurfer's internal AudioContext
-      audioContext = 
-        ws.getAudioContext?.() || 
-        ws.backend?.ac || 
-        ws.backend?.getAudioContext?.();
-      
-      if (!audioContext) {
-        console.log("No WaveSurfer AudioContext, creating new one");
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      
-      analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      bufferLength = analyser.frequencyBinCount;
-      dataArray = new Uint8Array(bufferLength);
-      
       let connected = false;
-      
-      // APPROACH 1A: Connect using WaveSurfer's internal source directly
-      if (ws.backend?.source) {
+
+      // CACHE LOOKUP — createMediaElementSource() can only be called ONCE per
+      // <audio> element for its entire lifetime. We stash the source + context
+      // on the media element so subsequent VisualizerBars mounts (e.g. when
+      // toggling fullscreen) can reuse them instead of throwing InvalidStateError.
+      const cacheElement = ws.getMediaElement?.() || document.querySelectorAll('audio')[0];
+      if (cacheElement?.__visualizerCache) {
         try {
-          ws.backend.source.connect(analyser);
-          analyser.connect(audioContext.destination);
-          console.log("Connected using WaveSurfer's backend source");
+          const cache = cacheElement.__visualizerCache;
+          audioContext = cache.audioContext;
+          source = cache.source;
+
+          analyser = audioContext.createAnalyser();
+          analyser.fftSize = 256;
+          bufferLength = analyser.frequencyBinCount;
+          dataArray = new Uint8Array(bufferLength);
+
+          // source -> destination already wired in cache; just add this analyser tap
+          source.connect(analyser);
           connected = true;
+          isCachedPath = true;
+          console.log("Reusing cached MediaElementSource");
         } catch (e) {
-          console.log("Error connecting to backend source:", e);
+          console.log("Error reusing cached source:", e);
         }
       }
-      
-      // APPROACH 1B: Try getMediaElement method
-      if (!connected && ws.getMediaElement) {
-        const mediaElement = ws.getMediaElement();
-        if (mediaElement) {
+
+      if (!connected) {
+        console.log("Setting up visualizer - approach 1");
+
+        // APPROACH 1: Use WaveSurfer's internal AudioContext
+        audioContext =
+          ws.getAudioContext?.() ||
+          ws.backend?.ac ||
+          ws.backend?.getAudioContext?.();
+
+        if (!audioContext) {
+          console.log("No WaveSurfer AudioContext, creating new one");
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        bufferLength = analyser.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+
+        // APPROACH 1A: Connect using WaveSurfer's internal source directly
+        if (ws.backend?.source) {
           try {
-            source = audioContext.createMediaElementSource(mediaElement);
-            source.connect(analyser);
+            ws.backend.source.connect(analyser);
             analyser.connect(audioContext.destination);
-            console.log("Connected using WaveSurfer's getMediaElement()");
+            console.log("Connected using WaveSurfer's backend source");
             connected = true;
           } catch (e) {
-            console.log("Error connecting to getMediaElement:", e);
+            console.log("Error connecting to backend source:", e);
           }
         }
-      }
-      
-      // APPROACH 2: Look for audio elements in the DOM
-      if (!connected) {
-        // Try to find audio elements in different ways
-        const audioElements = document.querySelectorAll('audio');
-        console.log(`Found ${audioElements.length} audio elements in DOM`);
-        
-        if (audioElements.length > 0) {
-          try {
-            source = audioContext.createMediaElementSource(audioElements[0]);
-            source.connect(analyser);
-            analyser.connect(audioContext.destination);
-            console.log("Connected to audio element from DOM");
-            connected = true;
-          } catch (e) {
-            console.log("Error connecting to DOM audio element:", e);
+
+        // APPROACH 1B: Try getMediaElement method
+        // Routes audio as: source -> destination (audio out) AND source -> analyser
+        // (FFT tap) as parallel branches, so the analyser can be detached on
+        // unmount without breaking the audio output. Source + context get cached
+        // so future mounts can reuse them.
+        if (!connected && ws.getMediaElement) {
+          const mediaElement = ws.getMediaElement();
+          if (mediaElement) {
+            try {
+              source = audioContext.createMediaElementSource(mediaElement);
+              source.connect(audioContext.destination);
+              source.connect(analyser);
+              mediaElement.__visualizerCache = { audioContext, source };
+              console.log("Connected using WaveSurfer's getMediaElement()");
+              connected = true;
+              isCachedPath = true;
+            } catch (e) {
+              console.log("Error connecting to getMediaElement:", e);
+            }
+          }
+        }
+
+        // APPROACH 2: Look for audio elements in the DOM
+        if (!connected) {
+          // Try to find audio elements in different ways
+          const audioElements = document.querySelectorAll('audio');
+          console.log(`Found ${audioElements.length} audio elements in DOM`);
+
+          if (audioElements.length > 0) {
+            try {
+              source = audioContext.createMediaElementSource(audioElements[0]);
+              source.connect(audioContext.destination);
+              source.connect(analyser);
+              audioElements[0].__visualizerCache = { audioContext, source };
+              console.log("Connected to audio element from DOM");
+              connected = true;
+              isCachedPath = true;
+            } catch (e) {
+              console.log("Error connecting to DOM audio element:", e);
+            }
           }
         }
       }
@@ -279,12 +316,21 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple', isPlaying = 
         ws.un('play', handlePlay);
 
         try {
-          if (connected) {
-            if (source) {
+          if (isCachedPath) {
+            // Cached path: detach only this instance's analyser tap.
+            // Leave source -> destination alive so audio keeps playing
+            // and the next mount can reuse the cached graph.
+            if (source && analyser) {
               source.disconnect(analyser);
-              source.disconnect(audioContext.destination);
             }
-            analyser.disconnect();
+          } else if (connected) {
+            // Non-cached path (e.g. ws.backend.source). Full teardown.
+            if (source) {
+              try { source.disconnect(); } catch { /* noop */ }
+            }
+            if (analyser) {
+              analyser.disconnect();
+            }
           }
         } catch (err) {
           console.log('Error disconnecting audio nodes:', err);

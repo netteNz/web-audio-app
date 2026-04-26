@@ -6,6 +6,7 @@ import Waveform from './Waveform';
 import VolumeSlider from './VolumeSlider';
 import VisualizerBars from './VisualizerBars';
 import AnimationStyleDropdown from './AnimationStyleDropdown';
+import FullscreenPlayer from './FullscreenPlayer';
 import { trackEvent } from '../../utils/analytics'; // Import trackEvent function
 
 const AudioPlayer = () => {
@@ -17,6 +18,7 @@ const AudioPlayer = () => {
   const [dragging, setDragging] = useState(false);
   const [audioSrc, setAudioSrc] = useState(import.meta.env.BASE_URL + 'example.mp3');
   const [duration, setDuration] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const [metadata, setMetadata] = useState({
     title: 'Neuro Pulse',
@@ -236,14 +238,30 @@ const AudioPlayer = () => {
   };
 
   return (
-    <div
+    <>
+      {isFullscreen && (
+        <FullscreenPlayer
+          onClose={() => setIsFullscreen(false)}
+          metadata={metadata}
+          duration={duration}
+          wavesurferRef={wavesurferRef}
+          animationStyle={animationStyle}
+          isPlaying={isPlaying}
+          volume={volume}
+          onPlayPause={togglePlay}
+          onSeekForward={handleSeekForward}
+          onSeekBackward={handleSeekBackward}
+          onVolumeChange={handleVolumeChange}
+        />
+      )}
+      <div
       className={`relative w-full max-w-4xl mx-auto mt-4 sm:mt-10 p-3 sm:p-6 rounded-2xl bg-zinc-900 text-white space-y-6 sm:space-y-8 shadow-xl shadow-black/40 ring-1 ring-zinc-800/50 transition-colors ${dragging ? 'bg-zinc-800 border-2 border-dashed border-violet-400' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div className="flex items-center justify-between gap-3 w-full">
-        <TrackInfo metadata={metadata} duration={duration} />
+        <TrackInfo metadata={metadata} duration={duration} onArtworkClick={() => setIsFullscreen(true)} />
 
         <label className="cursor-pointer self-start p-3 rounded-full bg-zinc-800/70 hover:bg-zinc-700 transition-all duration-150 active:scale-90 text-white flex items-center justify-center flex-shrink-0" title="Load Audio">
           <span className="material-symbols-rounded leading-none select-none" style={{ fontSize: 22 }}>upload_file</span>
@@ -261,11 +279,13 @@ const AudioPlayer = () => {
       {/* Only render the visualizer and controls when audio is ready */}
       {isWaveReady && (
         <>
-          <VisualizerBars
-            wavesurferRef={wavesurferRef}
-            animationStyle={animationStyle}
-            isPlaying={isPlaying}
-          />
+          {!isFullscreen && (
+            <VisualizerBars
+              wavesurferRef={wavesurferRef}
+              animationStyle={animationStyle}
+              isPlaying={isPlaying}
+            />
+          )}
 
           <div className="flex flex-col gap-3 sm:gap-4 pt-1 px-1 sm:pt-2 md:px-6">
             {/* Controls row: [desktop dropdown] [play controls absolutely centered] [volume] */}
@@ -328,6 +348,7 @@ const AudioPlayer = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

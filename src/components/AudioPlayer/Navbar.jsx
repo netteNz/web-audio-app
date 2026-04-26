@@ -6,7 +6,6 @@ const Navbar = () => {
   return (
     <nav
       className="w-full px-4 py-3 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/60 fixed top-0 left-0 z-10"
-      style={{ fontFamily: "'JetBrains Mono', monospace" }}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -15,7 +14,7 @@ const Navbar = () => {
             alt="Audio Equalizer" 
             className="w-6 h-6"
           />
-          <span className="text-xl font-bold text-white">Web Audio Player</span>
+          <span className="text-xl text-white">Web Audio Player</span>
         </div>
         
         <div className="hidden md:flex space-x-6">

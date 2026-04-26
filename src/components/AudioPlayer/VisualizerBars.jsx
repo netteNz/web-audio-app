@@ -182,7 +182,13 @@ const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple', isPlaying = 
         console.log("Could not connect to any audio source, using fallback visualization");
         // We'll still create a visualization but it won't be connected to audio
       }
-      
+
+      // Resume suspended AudioContext — browsers honour prior user gestures so
+      // this succeeds silently without requiring a new interaction.
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume().catch(() => {});
+      }
+
       // Set up canvas for visualization
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');

@@ -279,13 +279,13 @@ const AudioPlayer = () => {
       {/* Only render the visualizer and controls when audio is ready */}
       {isWaveReady && (
         <>
-          {!isFullscreen && (
+          <div className={isFullscreen ? 'invisible' : ''}>
             <VisualizerBars
               wavesurferRef={wavesurferRef}
               animationStyle={animationStyle}
               isPlaying={isPlaying}
             />
-          )}
+          </div>
 
           <div className="flex flex-col gap-3 sm:gap-4 pt-1 px-1 sm:pt-2 md:px-6">
             {/* Controls row: [desktop dropdown] [play controls absolutely centered] [volume] */}

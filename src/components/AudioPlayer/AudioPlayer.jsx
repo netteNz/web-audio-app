@@ -269,16 +269,18 @@ const AudioPlayer = () => {
 
           <div className="flex flex-col gap-3 sm:gap-4 pt-1 px-1 sm:pt-2 md:px-6">
             {/* Controls row: [desktop dropdown] [play controls centered] [volume] */}
-            <div className="flex items-center w-full gap-2 sm:gap-4">
-              <div className="hidden sm:block sm:w-40 flex-shrink-0">
-                <AnimationStyleDropdown
-                  style={animationStyle}
-                  onChange={handleStyleChange}
-                  label="Style"
-                />
+            <div className="flex items-center justify-between w-full">
+              <div className="flex-1 flex justify-start min-w-0">
+                <div className="hidden sm:block w-full max-w-[10rem]">
+                  <AnimationStyleDropdown
+                    style={animationStyle}
+                    onChange={handleStyleChange}
+                    label="Style"
+                  />
+                </div>
               </div>
 
-              <div className="flex justify-center flex-1">
+              <div className="flex-none flex justify-center px-1 sm:px-4">
                 <AudioControls
                   isPlaying={isPlaying}
                   onPlayPause={togglePlay}
@@ -287,7 +289,7 @@ const AudioPlayer = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-end flex-shrink-0">
+              <div className="flex-1 flex justify-end min-w-0">
                 <VolumeSlider volume={volume} onChange={handleVolumeChange} />
               </div>
             </div>

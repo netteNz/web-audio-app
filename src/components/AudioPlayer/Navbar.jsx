@@ -19,8 +19,8 @@ const Navbar = () => {
         
         <div className="hidden md:flex space-x-6">
           <a href="https://nettenz.github.io" className="text-white hover:text-violet-400 transition-colors">Home</a>
-          <a href="https://nettenz.github.io/#projects" className="text-white hover:text-violet-400 transition-colors">Projects</a>
-          <a href="https://nettenz.github.io/#contact" className="text-white hover:text-violet-400 transition-colors">Contact</a>
+          <a href="https://nettenz.github.io?open=projects" className="text-white hover:text-violet-400 transition-colors">Projects</a>
+          <a href="https://nettenz.github.io?open=about" className="text-white hover:text-violet-400 transition-colors">Contact</a>
         </div>
       </div>
     </nav>

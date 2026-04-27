@@ -60,7 +60,7 @@ const PlaylistManager = ({ playlist, currentIndex, onSelect, onRemove, onFilesAd
                 key={track.id}
                 className={`group flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors duration-150 ${
                   isActive
-                    ? 'bg-violet-500/10 border-l-2 border-violet-400'
+                    ? 'bg-white/[0.04] border-l-2 border-violet-400/70'
                     : 'hover:bg-white/5 border-l-2 border-transparent'
                 }`}
                 onClick={() => onSelect(index)}

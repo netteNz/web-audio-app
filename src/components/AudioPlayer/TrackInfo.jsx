@@ -32,7 +32,7 @@ const TrackInfo = ({ metadata, duration = 0, onArtworkClick }) => {
       </button>
 
       <div className="min-w-0 flex-1">
-        <h2 className="text-base sm:text-lg font-bold text-white truncate">{title || 'Unknown Title'}</h2>
+        <h2 className="text-base sm:text-lg font-medium text-white truncate">{title || 'Unknown Title'}</h2>
         <p className="text-sm text-zinc-300 truncate">{artist || 'Unknown Artist'}</p>
         {(album || duration > 0) && (
           <p className="text-xs text-zinc-400 truncate mt-0.5">

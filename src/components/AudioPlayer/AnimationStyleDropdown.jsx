@@ -71,16 +71,26 @@ const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
 
   return (
     <div className="relative z-20">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full px-3 py-2 text-sm bg-zinc-800 hover:bg-zinc-700 transition-colors rounded-md border border-zinc-700/50"
-      >
-        <span className="text-zinc-400">{label}:</span>
-        <div className="flex items-center">
-          <span className="mr-2 text-white">{selectedStyle.name}</span>
-          <span className={`material-symbols-rounded leading-none select-none transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} style={{ fontSize: 20 }}>expand_more</span>
-        </div>
-      </button>
+      {isMobile ? (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="p-2 rounded-xl bg-zinc-800/60 hover:bg-zinc-700 transition-colors text-zinc-400"
+          aria-label="Visualization style"
+        >
+          <span className="material-symbols-rounded leading-none select-none" style={{ fontSize: 22 }}>graphic_eq</span>
+        </button>
+      ) : (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center justify-between w-full px-3 py-2 text-sm bg-zinc-800 hover:bg-zinc-700 transition-colors rounded-md border border-zinc-700/50"
+        >
+          <span className="text-zinc-400">{label}:</span>
+          <div className="flex items-center">
+            <span className="mr-2 text-white">{selectedStyle.name}</span>
+            <span className={`material-symbols-rounded leading-none select-none transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} style={{ fontSize: 20 }}>expand_more</span>
+          </div>
+        </button>
+      )}
 
       {mobileDropdown}
 

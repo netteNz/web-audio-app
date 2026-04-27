@@ -26,12 +26,15 @@ const FullscreenPlayer = ({
   onSeekForward,
   onSeekBackward,
   onVolumeChange,
+  currentIndex,
+  playlistLength,
 }) => {
   const [visible, setVisible] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const dragStartYRef = useRef(0);
+  const dragYRef = useRef(0);
   const progressRef = useRef(null);
 
   useEffect(() => {
@@ -68,18 +71,53 @@ const FullscreenPlayer = ({
   };
 
   const handleTouchMove = (e) => {
-    const delta = e.touches[0].clientY - dragStartYRef.current;
-    setDragY(Math.max(0, delta));
+    const delta = Math.max(0, e.touches[0].clientY - dragStartYRef.current);
+    dragYRef.current = delta;
+    setDragY(delta);
   };
 
   const handleTouchEnd = () => {
     setIsDragging(false);
-    if (dragY > DISMISS_THRESHOLD) {
+    if (dragYRef.current > DISMISS_THRESHOLD) {
       handleClose();
     } else {
+      dragYRef.current = 0;
       setDragY(0);
     }
   };
+
+  const handleMouseDown = (e) => {
+    dragStartYRef.current = e.clientY;
+    setIsDragging(true);
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const onMouseMove = (e) => {
+      const delta = Math.max(0, e.clientY - dragStartYRef.current);
+      dragYRef.current = delta;
+      setDragY(delta);
+    };
+
+    const onMouseUp = () => {
+      setIsDragging(false);
+      if (dragYRef.current > DISMISS_THRESHOLD) {
+        setVisible(false);
+        setTimeout(onClose, ANIM_MS);
+      } else {
+        dragYRef.current = 0;
+        setDragY(0);
+      }
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [isDragging, onClose]);
 
   const handleProgressClick = (e) => {
     const ws = wavesurferRef.current;
@@ -112,6 +150,7 @@ const FullscreenPlayer = ({
     >
       <div
         className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+        onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -120,7 +159,12 @@ const FullscreenPlayer = ({
       </div>
 
       <div className="flex items-center justify-between px-4 pb-2">
-        <span className="text-xs uppercase tracking-widest text-zinc-400">Now Playing</span>
+        <div>
+          <span className="text-xs uppercase tracking-widest text-zinc-400">Now Playing</span>
+          {playlistLength > 1 && (
+            <p className="text-xs text-zinc-600 tabular-nums">{currentIndex + 1} of {playlistLength}</p>
+          )}
+        </div>
         <button
           onClick={handleClose}
           aria-label="Close full screen player"
@@ -180,6 +224,7 @@ const FullscreenPlayer = ({
 
         <div className="w-full max-w-sm">
           <VisualizerBars
+            key={currentIndex}
             wavesurferRef={wavesurferRef}
             animationStyle={animationStyle}
             isPlaying={isPlaying}

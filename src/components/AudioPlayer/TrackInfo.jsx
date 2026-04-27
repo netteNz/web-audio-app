@@ -16,7 +16,7 @@ const TrackInfo = ({ metadata, duration = 0, onArtworkClick }) => {
         type="button"
         onClick={onArtworkClick}
         aria-label="Open full screen player"
-        className="flex-shrink-0 rounded-xl active:scale-95 transition-transform duration-150"
+        className="flex-shrink-0 rounded-xl ring-1 ring-white/10 active:scale-95 transition-transform duration-150"
       >
         {picture ? (
           <img

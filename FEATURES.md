@@ -2,7 +2,7 @@
 
 > **Created:** 2026-04-28  
 > **Status:** Proposal — not yet scheduled  
-> **Context:** Built on React 18 + WaveSurfer.js + Web Audio API. All new features must respect the existing signal chain and component architecture defined in `.claude/CLAUDE.md`.
+> **Context:** Built on React 19 + WaveSurfer.js 7 + Web Audio API. All new features must respect the existing signal chain and component architecture defined in `.claude/CLAUDE.md`.
 
 ---
 
@@ -218,7 +218,7 @@ navigator.mediaSession.setActionHandler('seekto', ({ seekTime }) => ws.seekTo(se
 - WaveSurfer has a built-in `Minimap` plugin — evaluate if it still fits the current setup
 - Alternatively, render a second lower-resolution WaveSurfer instance (read-only, fixed zoom)  
 **Files:** `Waveform.jsx`  
-**Risk:** Two WaveSurfer instances sharing the same audio element — needs the same `__visualizerCache` pattern used in `VisualizerBars.jsx`.
+**Risk:** Two WaveSurfer instances sharing the same audio element — must go through `getSource()` in `src/utils/audioGraph.js` (one MediaElementSource per element).
 
 ---
 

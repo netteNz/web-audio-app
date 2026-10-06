@@ -2,7 +2,7 @@
 
 > **Last Updated:** 2026-04-28  
 > **Project:** React + Vite single-page audio player  
-> **Tech Stack:** React 18, Vite, Tailwind CSS v3, WaveSurfer.js
+> **Tech Stack:** React 19, Vite 6, Tailwind CSS v4 (CSS-first, via `@tailwindcss/vite`), WaveSurfer.js 7
 
 ---
 
@@ -15,6 +15,7 @@ web-audio-app/
 ├── dist/                             # Vite build output (git-ignored)
 ├── node_modules/                     # Dependencies (git-ignored)
 ├── public/                           # Static assets served at BASE_URL
+├── samples/                          # Local-only extra audio/images (git-ignored, not deployed)
 ├── src/                              # Source code
 ├── eslint.config.js                  # ESLint configuration
 ├── index.html                        # Vite HTML template (root level)
@@ -22,7 +23,6 @@ web-audio-app/
 ├── package-lock.json                 # Locked dependency versions
 ├── README.md                         # Project overview
 ├── STRUCTURE.md                      # This file — directory documentation
-├── tailwind.config.js                # Tailwind CSS v3 configuration
 └── vite.config.js                    # Vite build configuration
 ```
 
@@ -41,6 +41,7 @@ web-audio-app/
 
 | File | Purpose |
 |------|---------|
+| `audio-equalizer-device.svg` | Favicon + navbar logo (referenced via BASE_URL). |
 | `example.mp3` | **Default track loaded on first render.** ID3 tags fetched on mount via parseBlob. Included in repo. Users can drag-drop or upload their own files. |
 
 ---
@@ -51,8 +52,9 @@ web-audio-app/
 
 | File | Purpose |
 |------|---------|
-| `main.jsx` | **Vite entry point.** Defines App wrapper component; mounts Navbar + AudioPlayer + footer. Fires `initGA()` + `pageView()` on mount. **Do not modify unless task explicitly targets it.** |
-| `index.css` | Global styles, Tailwind @import directives. Material Symbols icon font imported via CDN in `index.html`. |
+| `main.jsx` | **Vite entry point.** Mounts `<App />` in StrictMode. |
+| `App.jsx` | App shell: Navbar + AudioPlayer + footer. Fires `initGA()` + `pageView()` on mount. **Do not modify unless task explicitly targets it.** |
+| `index.css` | Global styles, `@import 'tailwindcss'`, custom animations (`animate-fadein`, `animate-eq`, `animate-m3-pop`). Material Symbols icon font imported via CDN in `index.html`. |
 
 ### `src/components/AudioPlayer/` — Main Audio Player Components
 
@@ -62,7 +64,7 @@ Core audio player logic, state management, UI layout, and visualization.
 
 | File | Purpose |
 |------|---------|
-| `AudioPlayer.jsx` | **State orchestrator — owns all meaningful app state.** Manages isPlaying, volume, animationStyle, playlist, currentIndex, isFullscreen, isWaveReady, dragging. Renders card with TrackInfo, Waveform, VisualizerBars, AudioControls, VolumeSlider. Passes state down to child components. Handles file uploads, track selection, volume changes, animation style switches. Keys VisualizerBars by currentIndex to force remount on track switch. |
+| `AudioPlayer.jsx` | **State orchestrator — owns all meaningful app state.** Manages isPlaying, volume, animationStyle, playlist, currentIndex, isFullscreen, isWaveReady, dragging. Renders card with TrackInfo, Waveform, VisualizerBars, AudioControls, VolumeSlider. Passes state down to child components. Handles file uploads, track selection, volume changes, animation style switches. Keys VisualizerBars by track id to force remount on track switch. isPlaying is driven by WaveSurfer play/pause/finish events. |
 
 #### UI Components — Card & Layout
 
@@ -70,7 +72,7 @@ Core audio player logic, state management, UI layout, and visualization.
 |------|---------|
 | `TrackInfo.jsx` | **Metadata display row.** Always horizontal flex layout (mobile + desktop). Renders album artwork (tappable <button>), title, artist, album, duration. Artwork triggers fullscreen player on click. Fallback: gray placeholder with music_note icon. |
 | `Waveform.jsx` | **WaveSurfer waveform renderer.** Creates WaveSurfer instance in containerRef. Displays waveform with violet progress color. Time pill overlay (top-left, absolute): "currentTime / totalDuration" in tabular-nums. Fires onReady() callback when WaveSurfer 'ready' event fires. Destroys instance on src change. |
-| `VisualizerBars.jsx` | **Canvas FFT visualizer.** Analyzes audio via Web Audio API analyser. Draws bars/line/wave based on animationStyle prop. **Key rule:** always keyed by currentIndex (forces remount on track switch). Uses animationStyleRef to avoid stale closures in rAF loop. Implements __visualizerCache pattern to safely reuse MediaElementSource across multiple mounts (fullscreen toggle). Opacity 40% idle, 100% playing. |
+| `VisualizerBars.jsx` | **Canvas FFT visualizer.** Analyzes audio via Web Audio API analyser. Draws bars/line/wave based on animationStyle prop. **Key rule:** always keyed by track id (forces remount on track switch). Uses animationStyleRef to avoid stale closures in rAF loop. Taps the shared graph from `utils/audioGraph.js` (`getSource()`) — never calls createMediaElementSource directly. DPR-scaled canvas, ResizeObserver; `paused` prop stops the rAF loop (main card while fullscreen). Opacity 40% idle, 100% playing. |
 | `PlaylistManager.jsx` | **Queue panel below card.** Shows all tracks in a list; highlights active track; shows animated equalizer bars while playing. Supports drag-drop file add, per-track remove button (hidden if only 1 track). Header shows "QUEUE · N" count. Empty state: centered music_note + "No tracks in queue". |
 
 #### UI Components — Controls & Overlay
@@ -80,7 +82,7 @@ Core audio player logic, state management, UI layout, and visualization.
 | `AudioControls.jsx` | **Playback controls — stateless.** Three buttons: replay_10 (seek -10s), play/pause (violet accent), forward_10 (seek +10s). No props management — parent coordinates all state. Used in both AudioPlayer card and FullscreenPlayer. |
 | `VolumeSlider.jsx` | **Volume control — horizontal expanding slider.** Icon button opens collapsible w-24 range input to the left. Click icon: toggle mute/restore. Click outside: close. Shows icon state: volume_off / volume_mute / volume_down / volume_up based on current level. |
 | `AnimationStyleDropdown.jsx` | **Visualization style selector.** Options: 'simple' (Bars), 'minimal' (Line), 'wave' (Wave). Mobile: bottom sheet (createPortal to document.body) with backdrop blur. Icon-only trigger (graphic_eq). Desktop: text label dropdown above card. |
-| `FullscreenPlayer.jsx` | **Full-screen overlay player — Phase 2 [2].** Fixed z-50 slide-up animation. Features: drag handle + swipe-to-dismiss (80px threshold), hero artwork with play/pause scale, clickable progress bar, own VisualizerBars instance (keyed by currentIndex), "Now Playing" header with "N of M" playlist position. Shares WaveSurfer audio context with main card (reuses __visualizerCache). |
+| `FullscreenPlayer.jsx` | **Full-screen overlay player — Phase 2 [2].** Fixed z-50 slide-up animation. Features: drag handle + swipe-to-dismiss (80px threshold), hero artwork with play/pause scale, clickable progress bar, own VisualizerBars instance (keyed by track id), Escape to close, "Now Playing" header with "N of M" playlist position. Shares the app-wide AudioContext/source via `utils/audioGraph.js`. |
 
 #### Top Navigation
 
@@ -92,7 +94,9 @@ Core audio player logic, state management, UI layout, and visualization.
 
 | File | Purpose |
 |------|---------|
-| `analytics.js` | **Google Analytics 4 integration.** Exports: `initGA()`, `pageView(title)`, `trackEvent(name, params)`. Events: audio_load, audio_play, audio_pause, volume_change, visualization_change. **Do not modify signatures — they match GA4 schema.** |
+| `audioGraph.js` | **Shared Web Audio graph.** One app-wide AudioContext; `getSource(mediaEl)` creates/caches one MediaElementSource per element (WeakMap); `releaseSource()`, `resumeAudio()`. |
+| `formatTime.js` | Seconds → `m:ss`. |
+| `analytics.js` | **Google Analytics 4 integration.** `debug_mode` only in dev. Exports: `initGA()`, `pageView(title)`, `trackEvent(name, params)`. Events: audio_load, audio_play, audio_pause, volume_change, visualization_change. **Do not modify signatures — they match GA4 schema.** |
 
 ---
 
@@ -102,8 +106,7 @@ Core audio player logic, state management, UI layout, and visualization.
 |------|---------|
 | `index.html` | **Vite HTML template (at root, NOT in src/).** Root `<div id="root">` for React mount. Material Symbols Rounded icon font CDN link. Safe-area viewport meta tags for mobile. |
 | `vite.config.js` | Vite build configuration. Defines React plugin, BASE_URL for GitHub Pages deployment. |
-| `tailwind.config.js` | Tailwind CSS v3 config. Custom color palette: violet-400 primary, zinc color scale for surfaces/text. `sm:` breakpoint = 640px. |
-| `package.json` | Dependencies: react, react-dom, vite, tailwindcss, wavesurfer.js, music-metadata. Dev dependencies: eslint, autoprefixer, postcss. |
+| `package.json` | Dependencies: react, react-dom, wavesurfer.js, music-metadata, react-ga4. Dev dependencies: vite, tailwindcss + @tailwindcss/vite, eslint, gh-pages. No tailwind.config.js — Tailwind v4 uses CSS-first config and the default palette. |
 | `eslint.config.js` | ESLint rules for code quality & consistency. |
 
 ---
@@ -129,7 +132,7 @@ main.jsx (App)
   │  │  │  ├─ TrackInfo (artwork button + title/artist)
   │  │  │  └─ Upload label (self-start right)
   │  │  ├─ Waveform (WaveSurfer instance + time pill)
-  │  │  ├─ VisualizerBars key={currentIndex} (opacity-40/100)
+  │  │  ├─ VisualizerBars key={track.id} (opacity-40/100)
   │  │  ├─ [Separator]
   │  │  └─ [Controls Row]
   │  │     ├─ AnimationStyleDropdown (left slot / bottom sheet mobile)
@@ -145,7 +148,7 @@ main.jsx (App)
   │     ├─ Artwork (hero, scale on play state)
   │     ├─ Metadata (title, artist, album)
   │     ├─ Progress bar (clickable)
-  │     ├─ VisualizerBars key={currentIndex} (own instance)
+  │     ├─ VisualizerBars key={track.id} (own instance)
   │     ├─ AudioControls (reused)
   │     └─ VolumeSlider (reused)
   │
@@ -198,12 +201,13 @@ currentIndex   : number     // index into playlist
 ### Memory & Cleanup
 - **Blob URLs:** Must be revoked in useEffect cleanup (already handled in removeTrack).
 - **WaveSurfer destruction:** On src change via Waveform.jsx effect cleanup.
-- **Analyser state:** Remounts via `key={currentIndex}` on VisualizerBars — forces isAnalyzerReady reset.
+- **Analyser state:** Remounts via `key={track.id}` on VisualizerBars — re-taps the new WaveSurfer media element.
+- **Stale WaveSurfer events:** Waveform calls `ws.unAll()` before `destroy()` — destroy aborts the fetch and the rejected load would otherwise emit `error` into the next track's state.
 
 ### Canvas & Visualization
 - **animationStyleRef:** Intentional stale-closure workaround in VisualizerBars. Never read prop directly in rAF.
-- **__visualizerCache:** Stores `{ audioContext, source }` on media element. Allows safe reuse of MediaElementSource across fullscreen toggle. Always check cache before calling createMediaElementSource().
-- **invisible vs. hidden:** VisualizerBars uses `invisible` when fullscreen (keeps canvas & rAF alive). Still remounts on track switch.
+- **audioGraph:** One shared AudioContext; one MediaElementSource per media element cached in a WeakMap. Always use `getSource()` — calling createMediaElementSource() twice on an element throws InvalidStateError.
+- **invisible vs. hidden:** VisualizerBars uses `invisible` when fullscreen (keeps canvas dimensions); its rAF loop is paused via `paused` prop. Still remounts on track switch.
 
 ### UI & Responsiveness
 - **Tailwind only:** Layout, color, spacing. Inline styles only for fontVariationSettings + safe-area-inset env().
@@ -298,11 +302,14 @@ BASE_URL = `/web-audio-app/` in vite.config.js.
 ### Utilities
 - `src/utils/analytics.js` — GA4 integration
 - `src/main.jsx` — React entry point
+- `src/App.jsx` — App shell
+- `src/utils/audioGraph.js` — shared Web Audio graph
+- `src/utils/formatTime.js` — time formatting
+- `src/hooks/useFileDrop.js`, `src/hooks/useClickOutside.js` — shared hooks
 - `src/index.css` — Global styles
 
 ### Config
 - `vite.config.js` — Build config
-- `tailwind.config.js` — Tailwind config
 - `package.json` — Dependencies
 - `index.html` — HTML template
 
@@ -313,7 +320,7 @@ BASE_URL = `/web-audio-app/` in vite.config.js.
 | Task | Files to Touch |
 |------|----------------|
 | Add/modify a component | `src/components/AudioPlayer/*.jsx` + possibly `AudioPlayer.jsx` |
-| Change styles or spacing | `tailwind.config.js` + target component `.jsx` + `src/index.css` |
+| Change styles or spacing | Target component `.jsx` + `src/index.css` |
 | Add new state | `AudioPlayer.jsx` (source of truth) + pass to children |
 | Fix visualizer connection | `VisualizerBars.jsx` (analyser setup) + `Waveform.jsx` (WaveSurfer lifecycle) |
 | Add analytics event | `src/utils/analytics.js` (schema) + component calling `trackEvent()` |

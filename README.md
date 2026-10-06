@@ -28,7 +28,7 @@ A mobile-first web audio player built with React and the Web Audio API. Load any
 | WaveSurfer.js 7 | Waveform rendering and seek |
 | Web Audio API | Real-time frequency analysis |
 | music-metadata | In-browser audio tag extraction |
-| Lucide React | Icons |
+| Material Symbols | Icons |
 | react-ga4 | Google Analytics 4 |
 
 ---

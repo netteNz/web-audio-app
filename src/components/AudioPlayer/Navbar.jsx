@@ -1,7 +1,3 @@
-import React from 'react';
-// import { Disclosure } from '@headlessui/react';
-// import { Menu } from 'lucide-react';
-
 const Navbar = () => {
   return (
     <nav
@@ -10,7 +6,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <img 
-            src="./audio-equalizer-device.svg" 
+            src={`${import.meta.env.BASE_URL}audio-equalizer-device.svg`} 
             alt="Audio Equalizer" 
             className="w-6 h-6"
           />

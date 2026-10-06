@@ -10,13 +10,14 @@ export const pageView = (title = 'Web Audio App') => {
     hitType: 'pageview',
     page: window.location.pathname,
     title,
-    debug_mode: true, // Ensures it shows in DebugView
+    // DebugView only in dev — GA4 excludes debug traffic from standard reports
+    ...(import.meta.env.DEV && { debug_mode: true }),
   });
 };
 
 export const trackEvent = (eventName, params = {}) => {
   ReactGA.gtag('event', eventName, {
     ...params,
-    debug_mode: true, // Forces events to appear in DebugView
+    ...(import.meta.env.DEV && { debug_mode: true }),
   });
 };

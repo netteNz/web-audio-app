@@ -1,356 +1,138 @@
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
+import { getSource } from '../../utils/audioGraph';
 
-const VisualizerBars = ({ wavesurferRef, animationStyle = 'simple', isPlaying = false }) => {
+const ACCENT = '#a78bfa';
+const WAVE_FILL = 'rgba(167, 139, 250, 0.2)';
+
+// Traces the frequency line across the visible bins (caller strokes it)
+const tracePath = (ctx, data, count, step, height) => {
+  for (let i = 0; i < count; i++) {
+    const y = height - (data[i] / 255) * height;
+    if (i === 0) ctx.moveTo(0, y);
+    else ctx.lineTo(i * step, y);
+  }
+};
+
+const VisualizerBars = ({
+  wavesurferRef,
+  animationStyle = 'simple',
+  isPlaying = false,
+  paused = false,
+  className = 'h-20 sm:h-36',
+}) => {
   const canvasRef = useRef(null);
-  const animationRef = useRef(null);
   const animationStyleRef = useRef(animationStyle);
-  const [isAnalyzerReady, setIsAnalyzerReady] = useState(false);
-  const timeRef = useRef(0);
 
-  // Update ref when prop changes to make it available in draw function
+  // Mirror the prop into a ref — the rAF loop must never read the prop directly
   useEffect(() => {
     animationStyleRef.current = animationStyle;
   }, [animationStyle]);
 
-  // Handle user interaction to unblock audio context
-  useEffect(() => {
-    const unblockAudio = () => {
-      const ws = wavesurferRef.current;
-      if (!ws) return;
-
-      try {
-        const audioContext =
-          ws.getAudioContext?.() ||
-          ws.backend?.ac ||
-          ws.backend?.getAudioContext?.();
-
-        if (audioContext?.state === 'suspended') {
-          audioContext.resume().then(() => {
-            console.log('AudioContext resumed by user interaction');
-            setIsAnalyzerReady(true);
-          });
-        } else {
-          setIsAnalyzerReady(true);
-        }
-      } catch (err) {
-        console.error('Error resuming AudioContext:', err);
-      }
-    };
-
-    document.addEventListener('click', unblockAudio);
-    document.addEventListener('touchstart', unblockAudio);
-
-    return () => {
-      document.removeEventListener('click', unblockAudio);
-      document.removeEventListener('touchstart', unblockAudio);
-    };
-  }, [wavesurferRef]);
-
-  // Set up analyzer when wavesurfer is ready
+  // Attach an analyser tap to the shared graph and run the draw loop.
+  // Callers key this component by track id, so wavesurferRef.current is the
+  // live instance for this mount.
   useEffect(() => {
     const ws = wavesurferRef.current;
-    if (!ws) return;
+    const canvas = canvasRef.current;
+    if (!ws || !canvas || paused) return;
 
-    const isReady = ws.isReady;
-    if (!isReady) {
-      const onReady = () => setIsAnalyzerReady(true);
-      ws.on('ready', onReady);
-      return () => ws.un('ready', onReady);
-    } else {
-      setIsAnalyzerReady(true);
-    }
-  }, [wavesurferRef.current]);
-
-  // Create and connect analyzer with visual rendering
-  useEffect(() => {
-    const ws = wavesurferRef.current;
-    if (!ws || !isAnalyzerReady) return;
-
-    let analyser;
-    let audioContext;
-    let source;
-    let bufferLength;
-    let dataArray;
-    let isCachedPath = false;
+    let analyser = null;
+    let source = null;
+    let bufferLength = 128;
+    let dataArray = new Uint8Array(bufferLength);
 
     try {
-      let connected = false;
-
-      // CACHE LOOKUP — createMediaElementSource() can only be called ONCE per
-      // <audio> element for its entire lifetime. We stash the source + context
-      // on the media element so subsequent VisualizerBars mounts (e.g. when
-      // toggling fullscreen) can reuse them instead of throwing InvalidStateError.
-      const cacheElement = ws.getMediaElement?.() || document.querySelectorAll('audio')[0];
-      if (cacheElement?.__visualizerCache) {
-        try {
-          const cache = cacheElement.__visualizerCache;
-          audioContext = cache.audioContext;
-          source = cache.source;
-
-          analyser = audioContext.createAnalyser();
-          analyser.fftSize = 256;
-          bufferLength = analyser.frequencyBinCount;
-          dataArray = new Uint8Array(bufferLength);
-
-          // source -> destination already wired in cache; just add this analyser tap
-          source.connect(analyser);
-          connected = true;
-          isCachedPath = true;
-          console.log("Reusing cached MediaElementSource");
-        } catch (e) {
-          console.log("Error reusing cached source:", e);
-        }
-      }
-
-      if (!connected) {
-        console.log("Setting up visualizer - approach 1");
-
-        // APPROACH 1: Use WaveSurfer's internal AudioContext
-        audioContext =
-          ws.getAudioContext?.() ||
-          ws.backend?.ac ||
-          ws.backend?.getAudioContext?.();
-
-        if (!audioContext) {
-          console.log("No WaveSurfer AudioContext, creating new one");
-          audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-
-        analyser = audioContext.createAnalyser();
+      source = getSource(ws.getMediaElement?.());
+      if (source) {
+        analyser = source.context.createAnalyser();
         analyser.fftSize = 256;
         bufferLength = analyser.frequencyBinCount;
         dataArray = new Uint8Array(bufferLength);
-
-        // APPROACH 1A: Connect using WaveSurfer's internal source directly
-        if (ws.backend?.source) {
-          try {
-            ws.backend.source.connect(analyser);
-            analyser.connect(audioContext.destination);
-            console.log("Connected using WaveSurfer's backend source");
-            connected = true;
-          } catch (e) {
-            console.log("Error connecting to backend source:", e);
-          }
-        }
-
-        // APPROACH 1B: Try getMediaElement method
-        // Routes audio as: source -> destination (audio out) AND source -> analyser
-        // (FFT tap) as parallel branches, so the analyser can be detached on
-        // unmount without breaking the audio output. Source + context get cached
-        // so future mounts can reuse them.
-        if (!connected && ws.getMediaElement) {
-          const mediaElement = ws.getMediaElement();
-          if (mediaElement) {
-            try {
-              source = audioContext.createMediaElementSource(mediaElement);
-              source.connect(audioContext.destination);
-              source.connect(analyser);
-              mediaElement.__visualizerCache = { audioContext, source };
-              console.log("Connected using WaveSurfer's getMediaElement()");
-              connected = true;
-              isCachedPath = true;
-            } catch (e) {
-              console.log("Error connecting to getMediaElement:", e);
-            }
-          }
-        }
-
-        // APPROACH 2: Look for audio elements in the DOM
-        if (!connected) {
-          // Try to find audio elements in different ways
-          const audioElements = document.querySelectorAll('audio');
-          console.log(`Found ${audioElements.length} audio elements in DOM`);
-
-          if (audioElements.length > 0) {
-            try {
-              source = audioContext.createMediaElementSource(audioElements[0]);
-              source.connect(audioContext.destination);
-              source.connect(analyser);
-              audioElements[0].__visualizerCache = { audioContext, source };
-              console.log("Connected to audio element from DOM");
-              connected = true;
-              isCachedPath = true;
-            } catch (e) {
-              console.log("Error connecting to DOM audio element:", e);
-            }
-          }
-        }
+        source.connect(analyser);
       }
-      
-      // APPROACH 3: If all else fails, create a visual without audio connection
-      if (!connected) {
-        console.log("Could not connect to any audio source, using fallback visualization");
-        // We'll still create a visualization but it won't be connected to audio
-      }
-
-      // Resume suspended AudioContext — browsers honour prior user gestures so
-      // this succeeds silently without requiring a new interaction.
-      if (audioContext && audioContext.state === 'suspended') {
-        audioContext.resume().catch(() => {});
-      }
-
-      // Set up canvas for visualization
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-
-      // Make canvas responsive
-      const resizeCanvas = () => {
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
-      };
-
-      resizeCanvas();
-      window.addEventListener('resize', resizeCanvas);
-
-      // Animation function
-      function draw(timestamp) {
-        // Update our time reference
-        timeRef.current = timestamp || 0;
-        
-        if (connected) {
-          analyser.getByteFrequencyData(dataArray);
-        } else {
-          // Fallback: generate random data for visualization if not connected
-          for (let i = 0; i < bufferLength; i++) {
-            // Random values that slowly change
-            dataArray[i] = (dataArray[i] || 0) * 0.95 + Math.random() * 25;
-          }
-        }
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const barWidth = (canvas.width / bufferLength) * 2.5;
-
-        // Use ref value instead of prop directly to get current animation style
-        const currentStyle = animationStyleRef.current;
-        
-        if (currentStyle === 'wave') {
-          // Wave visualization
-          ctx.beginPath();
-          ctx.fillStyle = 'rgba(167, 139, 250, 0.2)';
-          
-          // Draw the bottom line at canvas height
-          ctx.moveTo(0, canvas.height);
-          
-          let x = 0;  // Start from 0 and increment like the line effect
-          for (let i = 0; i < bufferLength; i++) {
-            const barHeight = (dataArray[i] / 255) * canvas.height;
-            const y = canvas.height - barHeight;
-            
-            ctx.lineTo(x, y);
-            
-            x += barWidth + 1; // Use the same increment as the line effect
-          }
-          
-          // Complete the path back to the bottom
-          ctx.lineTo(canvas.width, canvas.height);
-          ctx.closePath();
-          ctx.fill();
-          
-          // Add a stroke on top of the fill
-          ctx.beginPath();
-          x = 0;  // Reset x for the stroke
-          for (let i = 0; i < bufferLength; i++) {
-            const barHeight = (dataArray[i] / 255) * canvas.height;
-            const y = canvas.height - barHeight;
-            
-            if (i === 0) {
-              ctx.moveTo(x, y);
-            } else {
-              ctx.lineTo(x, y);
-            }
-            
-            x += barWidth + 1;
-          }
-          ctx.strokeStyle = '#a78bfa';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-        } else if (currentStyle === 'minimal') {
-          ctx.beginPath();
-          ctx.strokeStyle = '#a78bfa';
-          ctx.lineWidth = 2;
-          
-          let x = 0;
-          for (let i = 0; i < bufferLength; i++) {
-            const barHeight = (dataArray[i] / 255) * canvas.height;
-            
-            if (i === 0) {
-              ctx.moveTo(x, canvas.height - barHeight);
-            } else {
-              ctx.lineTo(x, canvas.height - barHeight);
-            }
-            
-            x += barWidth + 1;
-          }
-          ctx.stroke();
-        } else {
-          // Default 'simple' style: Colorful bars
-          let x = 0;
-          for (let i = 0; i < bufferLength; i++) {
-            const barHeight = (dataArray[i] / 255) * canvas.height;
-
-            // Use a gradient color based on frequency
-            ctx.fillStyle = `hsl(${250 + (i / bufferLength) * 80}, 75%, 65%)`;
-            ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-
-            x += barWidth + 1;
-          }
-        }
-
-        animationRef.current = requestAnimationFrame(draw);
-      }
-
-      // Start animation
-      animationRef.current = requestAnimationFrame(draw);
-
-      // Listen for play/pause to ensure audio context is resumed
-      const handlePlay = async () => {
-        if (audioContext.state === 'suspended') {
-          try {
-            await audioContext.resume();
-            console.log("AudioContext resumed on play");
-          } catch (e) {
-            console.error("Failed to resume AudioContext:", e);
-          }
-        }
-      };
-
-      ws.on('play', handlePlay);
-
-      return () => {
-        cancelAnimationFrame(animationRef.current);
-        window.removeEventListener('resize', resizeCanvas);
-        ws.un('play', handlePlay);
-
-        try {
-          if (isCachedPath) {
-            // Cached path: detach only this instance's analyser tap.
-            // Leave source -> destination alive so audio keeps playing
-            // and the next mount can reuse the cached graph.
-            if (source && analyser) {
-              source.disconnect(analyser);
-            }
-          } else if (connected) {
-            // Non-cached path (e.g. ws.backend.source). Full teardown.
-            if (source) {
-              try { source.disconnect(); } catch { /* noop */ }
-            }
-            if (analyser) {
-              analyser.disconnect();
-            }
-          }
-        } catch (err) {
-          console.log('Error disconnecting audio nodes:', err);
-        }
-      };
     } catch (err) {
-      console.error('Visualization setup error:', err);
-      return () => {};
+      // No audio tap — the loop falls back to drifting random data
+      console.error('Visualizer audio connection failed:', err);
+      analyser = null;
     }
-  }, [isAnalyzerReady]);
+
+    const ctx = canvas.getContext('2d');
+    let width = 0;
+    let height = 0;
+
+    // Size the backing store in device pixels, draw in CSS pixels
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      width = canvas.clientWidth;
+      height = canvas.clientHeight;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+
+    let frameId;
+    const draw = () => {
+      if (analyser) {
+        analyser.getByteFrequencyData(dataArray);
+      } else {
+        for (let i = 0; i < bufferLength; i++) {
+          dataArray[i] = dataArray[i] * 0.95 + Math.random() * 25;
+        }
+      }
+
+      ctx.clearRect(0, 0, width, height);
+      const barWidth = (width / bufferLength) * 2.5;
+      const step = barWidth + 1;
+      // Bars are wider than width/bufferLength, so only the low bins fit
+      const count = Math.min(bufferLength, Math.ceil(width / step) + 1);
+      const style = animationStyleRef.current;
+
+      if (style === 'wave') {
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+        for (let i = 0; i < count; i++) {
+          ctx.lineTo(i * step, height - (dataArray[i] / 255) * height);
+        }
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fillStyle = WAVE_FILL;
+        ctx.fill();
+      }
+
+      if (style === 'wave' || style === 'minimal') {
+        ctx.beginPath();
+        tracePath(ctx, dataArray, count, step, height);
+        ctx.strokeStyle = ACCENT;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else {
+        // 'simple': HSL frequency bars
+        for (let i = 0; i < count; i++) {
+          const barHeight = (dataArray[i] / 255) * height;
+          ctx.fillStyle = `hsl(${250 + (i / bufferLength) * 80}, 75%, 65%)`;
+          ctx.fillRect(i * step, height - barHeight, barWidth, barHeight);
+        }
+      }
+
+      frameId = requestAnimationFrame(draw);
+    };
+    frameId = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      observer.disconnect();
+      if (analyser) {
+        try { source.disconnect(analyser); } catch { /* already disconnected */ }
+      }
+    };
+  }, [wavesurferRef, paused]);
 
   return (
-    <div className={`w-full bg-zinc-950 rounded-xl overflow-hidden transition-opacity ${isPlaying ? 'opacity-100' : 'opacity-40'}`}>
-      <canvas ref={canvasRef} className="w-full h-20 sm:h-36" />
+    <div className={`w-full ${className} transition-opacity ${isPlaying ? 'opacity-100' : 'opacity-40'}`}>
+      <canvas ref={canvasRef} className="block w-full h-full" />
     </div>
   );
 };

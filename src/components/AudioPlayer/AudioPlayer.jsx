@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { parseBlob } from 'music-metadata';
 import AudioControls from './AudioControls';
 import TrackInfo from './TrackInfo';
@@ -9,109 +9,119 @@ import AnimationStyleDropdown from './AnimationStyleDropdown';
 import FullscreenPlayer from './FullscreenPlayer';
 import PlaylistManager from './PlaylistManager';
 import { trackEvent } from '../../utils/analytics';
+import { resumeAudio } from '../../utils/audioGraph';
+import { useFileDrop } from '../../hooks/useFileDrop';
+
+const EMPTY_METADATA = { title: '', artist: '', album: '', picture: null };
+const LOADING_BAR_HEIGHTS = [45, 80, 30, 95, 60, 25, 70, 50];
+const SEEK_STEP = 10;
+
+// Some platforms report an empty MIME type for valid audio (e.g. .flac on Windows)
+const AUDIO_EXT = /\.(mp3|wav|ogg|oga|opus|flac|m4a|aac|webm)$/i;
+const isAudioFile = (file) => file.type.startsWith('audio/') || (!file.type && AUDIO_EXT.test(file.name));
+
+const revokeTrackUrls = (track) => {
+  if (track.src.startsWith('blob:')) URL.revokeObjectURL(track.src);
+  if (track.metadata.picture?.startsWith('blob:')) URL.revokeObjectURL(track.metadata.picture);
+};
+
+const extractMetadata = async (blob, fallback) => {
+  const { common } = await parseBlob(blob);
+  const picture = common.picture?.[0];
+  return {
+    title: common.title || fallback.title,
+    artist: common.artist || fallback.artist,
+    album: common.album || '',
+    picture: picture ? URL.createObjectURL(new Blob([picture.data], { type: picture.format })) : null,
+  };
+};
 
 const AudioPlayer = () => {
   const wavesurferRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isWaveReady, setIsWaveReady] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [volume, setVolume] = useState(0.15);
   const [animationStyle, setAnimationStyle] = useState('wave');
-  const [dragging, setDragging] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const [playlist, setPlaylist] = useState([{
+  const [playlist, setPlaylist] = useState(() => [{
     id: crypto.randomUUID(),
     src: `${import.meta.env.BASE_URL}example.mp3`,
     metadata: { title: 'Example Track', artist: 'Unknown Artist', album: '', picture: null },
+    metadataLoaded: false,
     duration: 0,
   }]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const currentTrack = playlist[currentIndex] ?? null;
+  const trackId = currentTrack?.id ?? null;
   const audioSrc = currentTrack?.src ?? null;
-  const metadata = currentTrack?.metadata ?? { title: '', artist: '', album: '', picture: null };
+  const metadata = currentTrack?.metadata ?? EMPTY_METADATA;
   const duration = currentTrack?.duration ?? 0;
+  const needsMetadata = !!currentTrack && !currentTrack.metadataLoaded;
 
-  // Fetch metadata for non-blob tracks (e.g. the default example.mp3)
+  // Latest playlist for async handlers and unmount cleanup
+  const playlistRef = useRef(playlist);
+  useEffect(() => { playlistRef.current = playlist; }, [playlist]);
+
+  // Revoke all blob URLs on unmount
+  useEffect(() => () => playlistRef.current.forEach(revokeTrackUrls), []);
+
+  // Fetch tags for tracks not parsed on add (the default example.mp3). Runs once
+  // per track — metadataLoaded prevents re-fetching on every reselect.
   useEffect(() => {
-    if (!audioSrc || audioSrc.startsWith('blob:')) return;
-    const idx = currentIndex;
-    const fetchMetadata = async () => {
+    if (!needsMetadata) return;
+    let cancelled = false;
+    (async () => {
       try {
-        const response = await fetch(audioSrc);
-        const blob = await response.blob();
-        const parsed = await parseBlob(blob);
-        const pictureData = parsed.common.picture?.[0];
-        const pictureUrl = pictureData
-          ? URL.createObjectURL(new Blob([pictureData.data]))
-          : null;
-        setPlaylist(prev => prev.map((t, i) =>
-          i === idx ? {
-            ...t,
-            metadata: {
-              title: parsed.common.title || 'Unknown Title',
-              artist: parsed.common.artist || 'Unknown Artist',
-              album: parsed.common.album || '',
-              picture: pictureUrl,
-            },
-          } : t
+        const blob = await (await fetch(audioSrc)).blob();
+        const meta = await extractMetadata(blob, { title: 'Unknown Title', artist: 'Unknown Artist' });
+        if (cancelled || !playlistRef.current.some(t => t.id === trackId)) {
+          if (meta.picture) URL.revokeObjectURL(meta.picture);
+          return;
+        }
+        setPlaylist(prev => prev.map(t =>
+          t.id === trackId ? { ...t, metadata: meta, metadataLoaded: true } : t
         ));
       } catch (err) {
         console.error('Failed to extract metadata:', err);
       }
-    };
-    fetchMetadata();
-  }, [audioSrc]);
+    })();
+    return () => { cancelled = true; };
+  }, [trackId, audioSrc, needsMetadata]);
 
-  // Revoke all blob URLs on unmount
-  const playlistRef = useRef(playlist);
-  useEffect(() => { playlistRef.current = playlist; }, [playlist]);
-  useEffect(() => {
-    return () => {
-      playlistRef.current.forEach(t => {
-        if (t.src.startsWith('blob:')) URL.revokeObjectURL(t.src);
-        if (t.metadata.picture?.startsWith('blob:')) URL.revokeObjectURL(t.metadata.picture);
-      });
-    };
-  }, []);
-
-  const handleFilesAdd = async (files) => {
-    const fileArray = Array.from(files).filter(f => f.type.includes('audio/'));
+  const handleFilesAdd = useCallback(async (files) => {
+    const fileArray = Array.from(files).filter(isAudioFile);
     if (!fileArray.length) return;
 
     fileArray.forEach(file => {
       trackEvent('audio_load', {
         file_type: file.type,
         file_size: Math.round(file.size / 1024),
-        file_name: file.name,
       });
     });
 
     const newTracks = await Promise.all(fileArray.map(async (file) => {
-      const src = URL.createObjectURL(file);
-      let meta = { title: file.name.replace(/\.[^/.]+$/, ''), artist: '', album: '', picture: null };
+      const fallback = { title: file.name.replace(/\.[^/.]+$/, ''), artist: '' };
+      let meta = { ...fallback, album: '', picture: null };
       try {
-        const parsed = await parseBlob(file);
-        meta = {
-          title: parsed.common.title || meta.title,
-          artist: parsed.common.artist || '',
-          album: parsed.common.album || '',
-          picture: parsed.common.picture?.[0]
-            ? URL.createObjectURL(new Blob([parsed.common.picture[0].data], { type: parsed.common.picture[0].format }))
-            : null,
-        };
-      } catch {}
-      return { id: crypto.randomUUID(), src, metadata: meta, duration: 0 };
+        meta = await extractMetadata(file, fallback);
+      } catch {
+        // Untagged or unparseable — keep the filename-based fallback
+      }
+      return { id: crypto.randomUUID(), src: URL.createObjectURL(file), metadata: meta, metadataLoaded: true, duration: 0 };
     }));
 
-    setPlaylist(prev => {
-      const updated = [...prev, ...newTracks];
-      setCurrentIndex(updated.length - newTracks.length);
-      return updated;
-    });
+    const firstNewIndex = playlistRef.current.length;
+    setPlaylist(prev => [...prev, ...newTracks]);
+    setCurrentIndex(firstNewIndex);
     setIsPlaying(false);
     setIsWaveReady(false);
-  };
+    setLoadError(null);
+  }, []);
+
+  const { dragging, dropProps } = useFileDrop(handleFilesAdd);
 
   const selectTrack = (index) => {
     if (index === currentIndex) return;
@@ -120,93 +130,84 @@ const AudioPlayer = () => {
   };
 
   const removeTrack = (index) => {
-    setPlaylist(prev => {
-      const removed = prev[index];
-      if (removed.src.startsWith('blob:')) URL.revokeObjectURL(removed.src);
-      if (removed.metadata.picture?.startsWith('blob:')) URL.revokeObjectURL(removed.metadata.picture);
-      return prev.filter((_, i) => i !== index);
-    });
+    const removed = playlist[index];
+    if (!removed) return;
+    revokeTrackUrls(removed);
+    setPlaylist(prev => prev.filter(t => t.id !== removed.id));
     setCurrentIndex(prev => {
       if (index < prev) return prev - 1;
       if (index === prev) return Math.max(0, prev - 1);
       return prev;
     });
-    if (index === currentIndex) {
-      setIsPlaying(false);
-    }
+    if (index === currentIndex) setIsPlaying(false);
   };
 
-  const handleWaveReady = () => {
-    const ws = wavesurferRef.current;
-    if (ws) {
-      ws.setVolume(volume);
-      const dur = ws.getDuration();
-      setPlaylist(prev => prev.map((t, i) =>
-        i === currentIndex ? { ...t, duration: dur } : t
-      ));
-    }
+  const handleWaveReady = (ws) => {
+    ws.setVolume(volume);
+    const dur = ws.getDuration();
+    setPlaylist(prev => prev.map(t => (t.id === trackId ? { ...t, duration: dur } : t)));
     setIsWaveReady(true);
+    setLoadError(null);
   };
 
-  // Drag and drop on card
-  const handleDragOver = (e) => { e.preventDefault(); setDragging(true); };
-  const handleDragLeave = (e) => { e.preventDefault(); setDragging(false); };
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragging(false);
-    if (e.dataTransfer.files.length > 0) handleFilesAdd(e.dataTransfer.files);
-  };
-
-  const togglePlay = async () => {
-    const ws = wavesurferRef.current;
-    if (ws && isWaveReady) {
-      try {
-        const audioContext = ws.getAudioContext?.() || ws.backend?.ac;
-        if (audioContext?.state === 'suspended') await audioContext.resume();
-      } catch (err) {
-        console.error('AudioContext resume error:', err);
-      }
-      ws.playPause();
-      const isNowPlaying = ws.isPlaying();
-      setIsPlaying(isNowPlaying);
-      trackEvent(isNowPlaying ? 'audio_play' : 'audio_pause', {
-        title: metadata.title,
-        current_time: Math.round(ws.getCurrentTime()),
-        duration: Math.round(ws.getDuration()),
-      });
+  const handleWaveError = () => {
+    if (playlist.length > 1) {
+      removeTrack(currentIndex);
+      setIsWaveReady(true);
+    } else {
+      setLoadError(`Couldn't load "${metadata.title || 'this track'}"`);
     }
   };
 
-  const handleVolumeChange = (val) => {
+  const togglePlay = useCallback(async () => {
+    const ws = wavesurferRef.current;
+    if (!ws || !isWaveReady) return;
+    // The shared AudioContext must be running before playback, or audio
+    // routed through it is silent. isPlaying is driven by ws play/pause events.
+    try {
+      await resumeAudio();
+    } catch (err) {
+      console.error('AudioContext resume error:', err);
+    }
+    const willPlay = !ws.isPlaying();
+    ws.playPause().catch(err => console.error('Playback failed:', err));
+    trackEvent(willPlay ? 'audio_play' : 'audio_pause', {
+      title: metadata.title,
+      current_time: Math.round(ws.getCurrentTime()),
+      duration: Math.round(ws.getDuration()),
+    });
+  }, [isWaveReady, metadata.title]);
+
+  const volumeRef = useRef(volume);
+  const handleVolumeChange = useCallback((val) => {
+    if (Math.abs(val - volumeRef.current) > 0.1) {
+      trackEvent('volume_change', { value: Math.round(val * 10) / 10 });
+    }
+    volumeRef.current = val;
     setVolume(val);
-    if (wavesurferRef.current) {
-      wavesurferRef.current.setVolume(val);
-      if (Math.abs(val - volume) > 0.1) {
-        trackEvent('volume_change', { value: Math.round(val * 10) / 10 });
-      }
-    }
-  };
+    wavesurferRef.current?.setVolume(val);
+  }, []);
 
-  const handleSeekForward = () => {
+  const seekBy = useCallback((delta) => {
     const ws = wavesurferRef.current;
-    if (ws && isWaveReady) ws.seekTo(Math.min((ws.getCurrentTime() + 10) / ws.getDuration(), 1));
-  };
-
-  const handleSeekBackward = () => {
-    const ws = wavesurferRef.current;
-    if (ws && isWaveReady) ws.seekTo(Math.max((ws.getCurrentTime() - 10) / ws.getDuration(), 0));
-  };
+    if (!ws || !isWaveReady) return;
+    ws.setTime(Math.min(Math.max(ws.getCurrentTime() + delta, 0), ws.getDuration()));
+  }, [isWaveReady]);
+  const handleSeekForward = useCallback(() => seekBy(SEEK_STEP), [seekBy]);
+  const handleSeekBackward = useCallback(() => seekBy(-SEEK_STEP), [seekBy]);
 
   const handleStyleChange = (newStyle) => {
     trackEvent('visualization_change', { from: animationStyle, to: newStyle });
     setAnimationStyle(newStyle);
   };
 
+  const closeFullscreen = useCallback(() => setIsFullscreen(false), []);
+
   return (
     <>
       {isFullscreen && (
         <FullscreenPlayer
-          onClose={() => setIsFullscreen(false)}
+          onClose={closeFullscreen}
           metadata={metadata}
           duration={duration}
           wavesurferRef={wavesurferRef}
@@ -217,6 +218,7 @@ const AudioPlayer = () => {
           onSeekForward={handleSeekForward}
           onSeekBackward={handleSeekBackward}
           onVolumeChange={handleVolumeChange}
+          trackId={trackId}
           currentIndex={currentIndex}
           playlistLength={playlist.length}
         />
@@ -230,9 +232,7 @@ const AudioPlayer = () => {
               ? 'ring-2 ring-violet-400/50 bg-violet-400/5'
               : 'ring-1 ring-white/5'
           }`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          {...dropProps}
         >
           {/* Ambient glow layer */}
           <div
@@ -264,6 +264,8 @@ const AudioPlayer = () => {
                 src={audioSrc}
                 wavesurferRef={wavesurferRef}
                 onReady={handleWaveReady}
+                onPlayStateChange={setIsPlaying}
+                onError={handleWaveError}
                 duration={duration}
               />
             )}
@@ -271,12 +273,14 @@ const AudioPlayer = () => {
 
           {isWaveReady && (
             <>
-              <div className={`rounded-xl overflow-hidden bg-zinc-900/40 [&>div]:h-14 sm:[&>div]:h-36 ${isFullscreen ? 'invisible' : ''}`}>
+              <div className={`rounded-xl overflow-hidden bg-zinc-900/40 ${isFullscreen ? 'invisible' : ''}`}>
                 <VisualizerBars
-                  key={currentIndex}
+                  key={trackId}
                   wavesurferRef={wavesurferRef}
                   animationStyle={animationStyle}
                   isPlaying={isPlaying}
+                  paused={isFullscreen}
+                  className="h-14 sm:h-36"
                 />
               </div>
 
@@ -308,23 +312,29 @@ const AudioPlayer = () => {
           )}
 
           {!isWaveReady && (
-            <div className="absolute inset-0 flex items-center justify-center bg-zinc-900 bg-opacity-80 backdrop-blur-sm rounded-2xl z-10 transition-all duration-300 animate-fadein">
+            <div className="absolute inset-0 flex items-center justify-center bg-zinc-900/80 backdrop-blur-sm rounded-2xl z-10 transition-all duration-300 animate-fadein">
               <div className="flex flex-col items-center space-y-4 p-6 bg-zinc-800 rounded-lg shadow-xl border border-zinc-700">
-                <div className="flex items-end h-12 space-x-1">
-                  {[...Array(8)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-2 bg-violet-400 rounded-full animate-pulse"
-                      style={{
-                        height: `${Math.random() * 100}%`,
-                        animationDelay: `${i * 0.1}s`,
-                        animationDuration: '0.8s',
-                      }}
-                    />
-                  ))}
-                </div>
-                <div className="text-white text-lg font-medium">Loading audio...</div>
-                <div className="text-zinc-400 text-sm">{metadata.title || 'Preparing your track'}</div>
+                {loadError ? (
+                  <>
+                    <span className="material-symbols-rounded leading-none select-none text-zinc-400" style={{ fontSize: 40 }}>error</span>
+                    <div className="text-white text-lg font-medium">{loadError}</div>
+                    <div className="text-zinc-400 text-sm">Try another file from the queue below</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-end h-12 space-x-1">
+                      {LOADING_BAR_HEIGHTS.map((height, i) => (
+                        <div
+                          key={i}
+                          className="w-2 bg-violet-400 rounded-full animate-eq"
+                          style={{ height: `${height}%`, animationDelay: `${i * 0.1}s` }}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-white text-lg font-medium">Loading audio...</div>
+                    <div className="text-zinc-400 text-sm">{metadata.title || 'Preparing your track'}</div>
+                  </>
+                )}
               </div>
             </div>
           )}

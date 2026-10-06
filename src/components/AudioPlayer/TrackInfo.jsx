@@ -1,11 +1,4 @@
-import React from 'react';
-
-const formatTime = (seconds) => {
-  if (!seconds || isNaN(seconds)) return '0:00';
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-};
+import { formatTime } from '../../utils/formatTime';
 
 const TrackInfo = ({ metadata, duration = 0, onArtworkClick }) => {
   const { title, artist, album, picture } = metadata;

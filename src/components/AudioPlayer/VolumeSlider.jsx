@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useClickOutside } from '../../hooks/useClickOutside';
 
 const VolumeSlider = ({ volume, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,21 +26,8 @@ const VolumeSlider = ({ volume, onChange }) => {
     }
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (sliderRef.current && !sliderRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, []);
+  const close = useCallback(() => setIsOpen(false), []);
+  useClickOutside(sliderRef, close, isOpen);
 
   return (
     <div className="relative flex items-center gap-2" ref={sliderRef}>
@@ -58,6 +46,7 @@ const VolumeSlider = ({ volume, onChange }) => {
 
       <button
         onClick={handleVolumeButtonClick}
+        aria-label={volume === 0 ? 'Unmute' : isOpen ? 'Mute' : 'Volume'}
         className="p-3 bg-zinc-800/70 hover:bg-zinc-700 rounded-full z-10 transition-all duration-150 active:scale-90 flex items-center justify-center"
       >
         {getVolumeIcon()}

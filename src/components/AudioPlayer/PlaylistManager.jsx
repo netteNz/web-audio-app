@@ -1,31 +1,15 @@
-import React, { useState } from 'react';
-
-const formatTime = (seconds) => {
-  if (!seconds || isNaN(seconds)) return '0:00';
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-};
+import { useFileDrop } from '../../hooks/useFileDrop';
+import { formatTime } from '../../utils/formatTime';
 
 const PlaylistManager = ({ playlist, currentIndex, onSelect, onRemove, onFilesAdd, isPlaying }) => {
-  const [dragging, setDragging] = useState(false);
-
-  const handleDragOver = (e) => { e.preventDefault(); setDragging(true); };
-  const handleDragLeave = (e) => { e.preventDefault(); setDragging(false); };
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragging(false);
-    if (e.dataTransfer.files.length > 0) onFilesAdd(e.dataTransfer.files);
-  };
+  const { dragging, dropProps } = useFileDrop(onFilesAdd);
 
   return (
     <div
       className={`w-full rounded-2xl bg-zinc-950 shadow-2xl shadow-black/60 overflow-hidden transition-all duration-150 ${
         dragging ? 'ring-2 ring-violet-400/50 bg-violet-400/5' : 'ring-1 ring-white/5'
       }`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      {...dropProps}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
@@ -72,7 +56,7 @@ const PlaylistManager = ({ playlist, currentIndex, onSelect, onRemove, onFilesAd
                       {[0, 1, 2].map((i) => (
                         <div
                           key={i}
-                          className="w-1 bg-violet-400 rounded-full animate-pulse"
+                          className="w-1 bg-violet-400 rounded-full animate-eq"
                           style={{ height: `${[60, 100, 40][i]}%`, animationDelay: `${i * 0.15}s` }}
                         />
                       ))}

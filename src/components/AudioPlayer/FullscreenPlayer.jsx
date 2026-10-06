@@ -1,14 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import AudioControls from './AudioControls';
 import VisualizerBars from './VisualizerBars';
 import VolumeSlider from './VolumeSlider';
-
-const formatTime = (seconds) => {
-  if (!seconds || isNaN(seconds)) return '0:00';
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-};
+import { formatTime } from '../../utils/formatTime';
 
 const SLIDE_EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';
 const ANIM_MS = 300;
@@ -26,6 +20,7 @@ const FullscreenPlayer = ({
   onSeekForward,
   onSeekBackward,
   onVolumeChange,
+  trackId,
   currentIndex,
   playlistLength,
 }) => {
@@ -36,6 +31,7 @@ const FullscreenPlayer = ({
   const dragStartYRef = useRef(0);
   const dragYRef = useRef(0);
   const progressRef = useRef(null);
+  const closeTimerRef = useRef(null);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true));
@@ -46,24 +42,36 @@ const FullscreenPlayer = ({
     const ws = wavesurferRef.current;
     if (!ws) return;
 
-    const update = () => {
-      setCurrentTime(ws.getCurrentTime());
-    };
+    setCurrentTime(ws.getCurrentTime());
+    // 'timeupdate' covers playback and seeks while paused
+    return ws.on('timeupdate', setCurrentTime);
+  }, [wavesurferRef, trackId]);
 
-    update();
-    ws.on('audioprocess', update);
-    ws.on('seek', update);
-
-    return () => {
-      ws.un('audioprocess', update);
-      ws.un('seek', update);
-    };
-  }, [wavesurferRef]);
-
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
+    if (closeTimerRef.current) return;
     setVisible(false);
-    setTimeout(onClose, ANIM_MS);
-  };
+    closeTimerRef.current = setTimeout(onClose, ANIM_MS);
+  }, [onClose]);
+
+  useEffect(() => () => clearTimeout(closeTimerRef.current), []);
+
+  // Escape closes the dialog
+  useEffect(() => {
+    const onKeyDown = (e) => { if (e.key === 'Escape') handleClose(); };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [handleClose]);
+
+  // Shared by touch-end and mouse-up: dismiss past the threshold, else snap back
+  const endDrag = useCallback(() => {
+    setIsDragging(false);
+    if (dragYRef.current > DISMISS_THRESHOLD) {
+      handleClose();
+    } else {
+      dragYRef.current = 0;
+      setDragY(0);
+    }
+  }, [handleClose]);
 
   const handleTouchStart = (e) => {
     dragStartYRef.current = e.touches[0].clientY;
@@ -74,16 +82,6 @@ const FullscreenPlayer = ({
     const delta = Math.max(0, e.touches[0].clientY - dragStartYRef.current);
     dragYRef.current = delta;
     setDragY(delta);
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    if (dragYRef.current > DISMISS_THRESHOLD) {
-      handleClose();
-    } else {
-      dragYRef.current = 0;
-      setDragY(0);
-    }
   };
 
   const handleMouseDown = (e) => {
@@ -100,24 +98,13 @@ const FullscreenPlayer = ({
       setDragY(delta);
     };
 
-    const onMouseUp = () => {
-      setIsDragging(false);
-      if (dragYRef.current > DISMISS_THRESHOLD) {
-        setVisible(false);
-        setTimeout(onClose, ANIM_MS);
-      } else {
-        dragYRef.current = 0;
-        setDragY(0);
-      }
-    };
-
     document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('mouseup', endDrag);
     return () => {
       document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
+      document.removeEventListener('mouseup', endDrag);
     };
-  }, [isDragging, onClose]);
+  }, [isDragging, endDrag]);
 
   const handleProgressClick = (e) => {
     const ws = wavesurferRef.current;
@@ -153,7 +140,7 @@ const FullscreenPlayer = ({
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        onTouchEnd={endDrag}
       >
         <div className="w-10 h-1 rounded-full bg-zinc-700" />
       </div>
@@ -224,7 +211,7 @@ const FullscreenPlayer = ({
 
         <div className="w-full max-w-sm">
           <VisualizerBars
-            key={currentIndex}
+            key={trackId}
             wavesurferRef={wavesurferRef}
             animationStyle={animationStyle}
             isPlaying={isPlaying}

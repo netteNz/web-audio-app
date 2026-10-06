@@ -1,33 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useClickOutside } from '../../hooks/useClickOutside';
+
+// One below Tailwind's sm breakpoint (min-width: 640px) so the two never overlap
+const MOBILE_QUERY = '(max-width: 639.98px)';
+
+const STYLES = [
+  { id: 'simple', name: 'Bars' },
+  { id: 'minimal', name: 'Line' },
+  { id: 'wave', name: 'Wave' },
+];
 
 const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  const styles = [
-    { id: 'simple', name: 'Bars' },
-    { id: 'minimal', name: 'Line' },
-    { id: 'wave', name: 'Wave' }
-  ];
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia(MOBILE_QUERY).matches);
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    // Check if we're on mobile
-    const checkMobile = () => {
-      setIsMobile(window.matchMedia('(max-width: 640px)').matches);
-    };
-
-    // Initial check
-    checkMobile();
-
-    // Listen for resize events
-    window.addEventListener('resize', checkMobile);
-
-    // Cleanup
-    return () => window.removeEventListener('resize', checkMobile);
+    const mql = window.matchMedia(MOBILE_QUERY);
+    const onChange = (e) => setIsMobile(e.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
   }, []);
 
-  const selectedStyle = styles.find(s => s.id === style) || styles[0];
+  // Desktop list closes on outside click. The mobile sheet is portaled to
+  // <body> and has its own backdrop, so it must not use this.
+  const close = useCallback(() => setIsOpen(false), []);
+  useClickOutside(containerRef, close, isOpen && !isMobile);
+
+  const selectedStyle = STYLES.find(s => s.id === style) || STYLES[0];
 
   const handleSelect = (styleId) => {
     onChange(styleId);
@@ -48,7 +49,7 @@ const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
           </button>
         </div>
         <div className="space-y-1">
-          {styles.map((styleOption) => (
+          {STYLES.map((styleOption) => (
             <button
               key={styleOption.id}
               className={
@@ -70,7 +71,7 @@ const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
   ) : null;
 
   return (
-    <div className="relative z-20">
+    <div className="relative z-20" ref={containerRef}>
       {isMobile ? (
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -96,7 +97,7 @@ const AnimationStyleDropdown = ({ style, onChange, label = 'Style' }) => {
 
       {isOpen && !isMobile && (
         <div className="absolute top-full left-0 mt-2 w-full bg-zinc-800 rounded-lg shadow-xl shadow-black/40 py-1.5 z-30 border border-zinc-700 animate-fadein origin-top">
-          {styles.map((styleOption) => (
+          {STYLES.map((styleOption) => (
             <button
               key={styleOption.id}
               className={

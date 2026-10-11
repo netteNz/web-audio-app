@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import AudioPlayer from './components/AudioPlayer/AudioPlayer';
 import Navbar from './components/AudioPlayer/Navbar';
+import PwaUpdatePrompt from './components/PwaUpdatePrompt';
 import { initGA, pageView } from './utils/analytics';
 
 const App = () => {
@@ -23,6 +24,8 @@ const App = () => {
       >
         <p>&copy; 2025 Emanuel Lugo. All rights reserved.</p>
       </footer>
+
+      <PwaUpdatePrompt />
     </div>
   );
 };

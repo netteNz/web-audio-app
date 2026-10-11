@@ -13,7 +13,8 @@ const Navbar = () => {
           <span className="text-xl text-white">Web Audio Player</span>
         </div>
         
-        <div className="hidden md:flex space-x-6">
+        {/* Portfolio links leave the PWA's scope — hidden when installed (standalone) */}
+        <div className="hidden md:flex [@media(display-mode:standalone)]:hidden space-x-6">
           <a href="https://nettenz.github.io" className="text-white hover:text-violet-400 transition-colors">Home</a>
           <a href="https://nettenz.github.io?open=projects" className="text-white hover:text-violet-400 transition-colors">Projects</a>
           <a href="https://nettenz.github.io?open=about" className="text-white hover:text-violet-400 transition-colors">Contact</a>

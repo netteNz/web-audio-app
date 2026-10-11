@@ -154,6 +154,8 @@ const AudioPlayer = () => {
     if (playlist.length > 1) {
       removeTrack(currentIndex);
       setIsWaveReady(true);
+    } else if (!navigator.onLine && !audioSrc?.startsWith('blob:')) {
+      setLoadError("You're offline — add a file from this device to play");
     } else {
       setLoadError(`Couldn't load "${metadata.title || 'this track'}"`);
     }

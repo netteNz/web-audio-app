@@ -16,7 +16,7 @@ Facts checked against the code and npm:
 - There are no next/previous-track handlers. `selectTrack(index)` (`AudioPlayer.jsx:126`) is the building block.
 - ESLint has no import plugin, so the virtual-module import is fine.
 
-## Phase 1: Installable and works offline (core)
+## Phase 1: Installable and works offline (core) — DONE
 
 1. **Dependencies:** add `vite-plugin-pwa` and `@vite-pwa/assets-generator` as devDependencies. Neither is in `package.json` today.
 2. **Icons:** add `pwa-assets.config.js` using the `minimal2023Preset`, with source `public/audio-equalizer-device.svg`.
@@ -46,7 +46,7 @@ Facts checked against the code and npm:
    - Render it in `src/App.jsx` after `<footer>`. This task targets App.jsx, so the "don't touch App.jsx" rule doesn't apply.
 6. **Offline error copy:** in `handleWaveError` (`AudioPlayer.jsx:153`), when `!navigator.onLine` and the track isn't a blob, change the message to "You're offline: add a file from this device to play". Otherwise behaviour stays the same.
 
-## Phase 2: Native-feeling playback controls
+## Phase 2: Native-feeling playback controls — DONE
 
 7. **`src/hooks/useMediaSession.js`:** a new hook, called from AudioPlayer.
    - **Metadata:** set `navigator.mediaSession.metadata = new MediaMetadata({title, artist, album, artwork})` whenever `currentTrack.id` or `metadata` changes. Artwork comes from `metadata.picture` (a blob URL) or the 512 icon.

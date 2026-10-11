@@ -11,6 +11,7 @@ import PlaylistManager from './PlaylistManager';
 import { trackEvent } from '../../utils/analytics';
 import { resumeAudio } from '../../utils/audioGraph';
 import { useFileDrop } from '../../hooks/useFileDrop';
+import { useMediaSession } from '../../hooks/useMediaSession';
 
 const EMPTY_METADATA = { title: '', artist: '', album: '', picture: null };
 const LOADING_BAR_HEIGHTS = [45, 80, 30, 95, 60, 25, 70, 50];
@@ -197,6 +198,27 @@ const AudioPlayer = () => {
   }, [isWaveReady]);
   const handleSeekForward = useCallback(() => seekBy(SEEK_STEP), [seekBy]);
   const handleSeekBackward = useCallback(() => seekBy(-SEEK_STEP), [seekBy]);
+
+  // Queue navigation for OS media controls. Bounded (no wrap); like a queue
+  // click, switching tracks doesn't auto-play.
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex < playlist.length - 1;
+  const selectPrev = () => { if (hasPrev) selectTrack(currentIndex - 1); };
+  const selectNext = () => { if (hasNext) selectTrack(currentIndex + 1); };
+
+  useMediaSession({
+    wavesurferRef,
+    trackId,
+    isWaveReady,
+    isPlaying,
+    metadata,
+    hasPrev,
+    hasNext,
+    onTogglePlay: togglePlay,
+    onSeekBy: seekBy,
+    onPrev: selectPrev,
+    onNext: selectNext,
+  });
 
   const handleStyleChange = (newStyle) => {
     trackEvent('visualization_change', { from: animationStyle, to: newStyle });
